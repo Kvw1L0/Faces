@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Revelar Imagen</title>
+    <!-- Firebase SDK (Compatibilidad para simplificar) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif; background-color: #111; color: #fff;
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+        }
+        .panel {
+            background: #222; padding: 30px; border-radius: 8px; width: 100%; max-width: 600px;
+            border-top: 4px solid #ffc107; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 { color: #ffc107; text-align: center; font-size: 1.5rem; margin-top: 0; }
+        .control-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 0.9rem; color: #aaa; }
+        input, select, button { padding: 12px; border-radius: 4px; border: none; font-size: 1rem; }
+        input[type="file"] { background: #333; color: white; }
+        .btn-row { display: flex; gap: 10px; }
+        .btn-row button { flex: 1; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-row button:active { transform: scale(0.98); }
+        .btn-primary { background-color: #ffc107; color: #000; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-nav { background-color: #444; color: white; }
+        .btn-nav:disabled, .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        #statusDisplay { text-align: center; margin-top: 15px; color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <h1>🛠️ Control de Activación</h1>
+
+        <div class="control-group">
+            <label>1. Cargar Imágenes (Playlist)</label>
+            <input type="file" id="imageInput" accept="image/*" multiple>
+            <div style="text-align: center; font-size: 0.9rem;" id="playlistCounter">Sin imágenes cargadas</div>
+        </div>
+
+        <div class="control-group">
+            <div class="btn-row">
+                <button class="btn-nav" id="btnPrev" disabled>⏮ Anterior</button>
+                <button class="btn-nav" id="btnNext" disabled>Siguiente ⏭</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>2. Configuración del Juego</label>
+            <div class="btn-row">
+                <select id="gridSelect">
+                    <option value="3">Cuadrícula: 3x3</option>
+                    <option value="4" selected>Cuadrícula: 4x4</option>
+                    <option value="6">Cuadrícula: 6x6</option>
+                </select>
+                <select id="timeSelect">
+                    <option value="15">15 Segundos</option>
+                    <option value="30" selected>30 Segundos</option>
+                    <option value="60">60 Segundos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>3. Controles en Vivo</label>
+            <div class="btn-row">
+                <button id="btnStart" class="btn-primary" disabled>▶ Iniciar Juego</button>
+                <button id="btnReveal" class="btn-danger" disabled>👁️ Revelar Todo</button>
+            </div>
+        </div>
+
+        <div id="statusDisplay">Esperando imágenes...</div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN FIREBASE (REEMPLAZAR)
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            databaseURL: "https://TU_PROYECTO.firebaseio.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "ID",
+            appId: "APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const gameRef = db.ref('current_game');
+
+        // Variables de Estado
+        let playlist = [];
+        let currentIndex = -1;
+        let intervalId;
+        let availableBlocks = [];
+        let revealedBlocks = [];
+
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        const btnStart = document.getElementById('btnStart');
+        const btnReveal = document.getElementById('btnReveal');
+        const gridSelect = document.getElementById('gridSelect');
+        const timeSelect = document.getElementById('timeSelect');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const playlistCounter = document.getElementById('playlistCounter');
+
+        // 1. Cargar Imágenes
+        imageInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            playlist = [];
+            let loadedCount = 0;
+            statusDisplay.innerText = "Procesando imágenes...";
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    playlist.push(evt.target.result);
+                    loadedCount++;
+                    if(loadedCount === files.length) {
+                        currentIndex = 0;
+                        updatePlaylistUI();
+                        syncToScreen();
+                    }
+                };
+                // Nota: Para optimización en producción, idealmente redimensionar en un canvas antes de convertir a base64
+                reader.readAsDataURL(file); 
+            });
+        });
+
+        function updatePlaylistUI() {
+            playlistCounter.innerText = `Imagen ${currentIndex + 1} de ${playlist.length}`;
+            btnPrev.disabled = currentIndex === 0;
+            btnNext.disabled = currentIndex === playlist.length - 1;
+            btnStart.disabled = false;
+            btnReveal.disabled = true;
+            statusDisplay.innerText = "Listo para iniciar";
+        }
+
+        // Navegación
+        btnNext.onclick = () => { if(currentIndex < playlist.length - 1) { currentIndex++; syncToScreen(); } };
+        btnPrev.onclick = () => { if(currentIndex > 0) { currentIndex--; syncToScreen(); } };
+
+        // 2. Sincronizar estado inicial a Firebase
+        function syncToScreen() {
+            clearInterval(intervalId);
+            revealedBlocks = [];
+            const gridSize = parseInt(gridSelect.value);
+            const totalBlocks = gridSize * gridSize;
+            
+            availableBlocks = Array.from({length: totalBlocks}, (_, i) => i);
+
+            gameRef.set({
+                image: playlist[currentIndex],
+                gridSize: gridSize,
+                status: 'idle',
+                revealedBlocks: []
+            });
+            updatePlaylistUI();
+        }
+
+        // 3. Iniciar Juego
+        btnStart.onclick = () => {
+            btnStart.disabled = true;
+            btnReveal.disabled = false;
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
+            gridSelect.disabled = true;
+
+            gameRef.update({ status: 'playing' });
+            statusDisplay.innerText = "Juego en curso...";
+
+            const totalTime = parseInt(timeSelect.value) * 1000;
+            const gridSize = parseInt(gridSelect.value);
+            const totalBlocks = gridSize * gridSize;
+            const intervalTime = totalTime / totalBlocks;
+
+            intervalId = setInterval(() => {
+                if (availableBlocks.length === 0) {
+                    endGame();
+                    return;
+                }
+                const randIdx = Math.floor(Math.random() * availableBlocks.length);
+                const blockToReveal = availableBlocks.splice(randIdx, 1)[0];
+                revealedBlocks.push(blockToReveal);
+                
+                gameRef.update({ revealedBlocks: revealedBlocks });
+            }, intervalTime);
+        };
+
+        // 4. Revelar Todo
+        btnReveal.onclick = () => {
+            gameRef.update({ status: 'revealed' });
+            endGame();
+        };
+
+        function endGame() {
+            clearInterval(intervalId);
+            statusDisplay.innerText = "Imagen Revelada";
+            btnReveal.disabled = true;
+            btnPrev.disabled = currentIndex === 0;
+            btnNext.disabled = currentIndex === playlist.length - 1;
+            gridSelect.disabled = false;
+        }
+
+        gridSelect.addEventListener('change', () => {
+            if(playlist.length > 0) syncToScreen();
+        });
+    </script>
+</body>
+</html>
