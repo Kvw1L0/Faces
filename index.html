@@ -3,260 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Revelar Imagen</title>
+    <title>Juego - Pantalla</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #222;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1 { margin-bottom: 10px; }
-
-        /* Controles */
-        .controls {
-            background: #333;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        input, select, button {
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            font-size: 1rem;
-        }
-
-        button {
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.1s;
-        }
-
-        button:active { transform: scale(0.95); }
-
-        .btn-start { background-color: #28a745; color: white; }
-        .btn-reveal { background-color: #ffc107; color: black; }
-        .btn-reset { background-color: #dc3545; color: white; }
-
-        /* Área del Juego */
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            /* Aspect ratio inicial cuadrado, se ajustará con JS */
-            aspect-ratio: 1 / 1; 
-            background-color: #444;
-            border: 4px solid #fff;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            overflow: hidden;
-            display: none; /* Oculto hasta que se cargue imagen */
-        }
-
-        /* La imagen de fondo */
-        #target-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Ajusta la imagen sin deformar */
-            display: block;
-        }
-
-        /* La Grilla (Overlay) */
-        #grid-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-        }
-
-        .grid-block {
-            background-color: #3b82f6; /* Color azul para tapar */
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: opacity 0.5s ease-out; /* Transición suave */
-            opacity: 1;
-            
-            /* Opcional: Patrón o signo de interrogación */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2rem;
-            color: rgba(255,255,255,0.2);
-        }
-
-        .grid-block.hidden {
-            opacity: 0; /* Se vuelve invisible */
-        }
-        
-        .timer-display {
-            font-size: 1.5rem;
-            margin-top: 10px;
-            font-weight: bold;
-            color: #ffc107;
-        }
-
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #game-container { position: relative; width: 90vmin; height: 90vmin; box-shadow: 0 0 30px rgba(255, 193, 7, 0.2); border: 2px solid #333; display: none; }
+        #target-image { width: 100%; height: 100%; object-fit: contain; display: block; background-color: #111; }
+        #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s; opacity: 1; transform: scale(1); }
+        .grid-block.hidden { opacity: 0; transform: scale(0); }
+        #waiting-msg { color: #555; font-family: sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 5px; }
     </style>
 </head>
 <body>
 
-    <h1>🕵️ Adivina el Personaje</h1>
-
-    <div class="controls">
-        <input type="file" id="imageInput" accept="image/*">
-
-        <select id="timeSelect">
-            <option value="15">Rápido (15s)</option>
-            <option value="30" selected>Normal (30s)</option>
-            <option value="45">Lento (45s)</option>
-            <option value="60">Muy Lento (1 min)</option>
-        </select>
-
-        <button onclick="startGame()" class="btn-start" id="btnStart" disabled>▶ Iniciar</button>
-        <button onclick="revealAll()" class="btn-reveal" id="btnReveal" disabled>👁️ Revelar Todo</button>
-        <button onclick="resetGame()" class="btn-reset">🔄 Reiniciar</button>
-    </div>
+    <div id="waiting-msg">Esperando conexión...</div>
 
     <div id="game-container">
-        <img id="target-image" src="" alt="Imagen a adivinar">
-        <div id="grid-overlay">
-            </div>
+        <img id="target-image" src="" alt="">
+        <div id="grid-overlay"></div>
     </div>
-    
-    <div class="timer-display" id="timerDisplay"></div>
 
-    <script>
-        const imageInput = document.getElementById('imageInput');
-        const gameContainer = document.getElementById('game-container');
+    <!-- Script tipo módulo para Firebase V9+ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs",
+            authDomain: "celebrity-baby-35179.firebaseapp.com",
+            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com",
+            projectId: "celebrity-baby-35179",
+            storageBucket: "celebrity-baby-35179.firebasestorage.app",
+            messagingSenderId: "830846373781",
+            appId: "1:830846373781:web:eaa35b292754152d07b09c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const gameRef = ref(db, 'activacion_adivina_personaje');
+        
+        const container = document.getElementById('game-container');
         const targetImage = document.getElementById('target-image');
         const gridOverlay = document.getElementById('grid-overlay');
-        const btnStart = document.getElementById('btnStart');
-        const btnReveal = document.getElementById('btnReveal');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const timeSelect = document.getElementById('timeSelect');
+        const waitingMsg = document.getElementById('waiting-msg');
 
-        let intervalId;
-        let blocks = [];
-        let availableIndices = [];
-        const GRID_SIZE = 4; // 4x4
-        const TOTAL_BLOCKS = GRID_SIZE * GRID_SIZE;
+        let currentBlocks = [];
 
-        // 1. Cargar la imagen
-        imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    targetImage.src = evt.target.result;
-                    gameContainer.style.display = 'block';
-                    btnStart.disabled = false;
-                    
-                    // Esperar a que la imagen cargue para ajustar aspect-ratio si fuera necesario
-                    targetImage.onload = () => {
-                        resetGrid();
-                    }
+        onValue(gameRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            waitingMsg.style.display = 'none';
+            container.style.display = 'block';
+
+            if (targetImage.src !== data.image || currentBlocks.length !== (data.gridSize * data.gridSize)) {
+                targetImage.src = data.image;
+                gridOverlay.style.gridTemplateColumns = `repeat(${data.gridSize}, 1fr)`;
+                gridOverlay.style.gridTemplateRows = `repeat(${data.gridSize}, 1fr)`;
+                
+                gridOverlay.innerHTML = '';
+                currentBlocks = [];
+                const total = data.gridSize * data.gridSize;
+                for (let i = 0; i < total; i++) {
+                    const block = document.createElement('div');
+                    block.classList.add('grid-block');
+                    gridOverlay.appendChild(block);
+                    currentBlocks.push(block);
                 }
-                reader.readAsDataURL(file);
+            }
+
+            if (data.status === 'revealed') {
+                currentBlocks.forEach(b => b.classList.add('hidden'));
+            } else {
+                const revealedIndices = data.revealedBlocks || [];
+                currentBlocks.forEach((block, index) => {
+                    if (revealedIndices.includes(index)) {
+                        block.classList.add('hidden');
+                    } else {
+                        block.classList.remove('hidden');
+                    }
+                });
             }
         });
-
-        // 2. Crear la grilla
-        function resetGrid() {
-            clearInterval(intervalId);
-            gridOverlay.innerHTML = '';
-            blocks = [];
-            availableIndices = [];
-            timerDisplay.textContent = '';
-
-            for (let i = 0; i < TOTAL_BLOCKS; i++) {
-                const div = document.createElement('div');
-                div.classList.add('grid-block');
-                div.innerText = '?'; // Opcional
-                gridOverlay.appendChild(div);
-                blocks.push(div);
-                availableIndices.push(i);
-            }
-            
-            btnStart.disabled = false;
-            btnReveal.disabled = true;
-        }
-
-        // 3. Iniciar el juego
-        function startGame() {
-            if (availableIndices.length === 0) resetGrid(); // Si ya acabó, reiniciar
-            
-            btnStart.disabled = true;
-            btnReveal.disabled = false;
-            imageInput.disabled = true;
-            timeSelect.disabled = true;
-
-            const totalTimeSeconds = parseInt(timeSelect.value);
-            // Calculamos cada cuánto revelar un bloque (en milisegundos)
-            const intervalTime = (totalTimeSeconds * 1000) / TOTAL_BLOCKS;
-
-            timerDisplay.textContent = `Revelando en ${totalTimeSeconds} segundos...`;
-
-            intervalId = setInterval(() => {
-                revealRandomBlock();
-            }, intervalTime);
-        }
-
-        // 4. Revelar un bloque al azar
-        function revealRandomBlock() {
-            if (availableIndices.length === 0) {
-                clearInterval(intervalId);
-                endGame();
-                return;
-            }
-
-            // Seleccionar índice al azar del array de disponibles
-            const randomIndexPosition = Math.floor(Math.random() * availableIndices.length);
-            const blockIndex = availableIndices[randomIndexPosition];
-
-            // Quitar ese índice de los disponibles para no repetirlo
-            availableIndices.splice(randomIndexPosition, 1);
-
-            // Ocultar el bloque visualmente (clase .hidden pone opacity: 0)
-            blocks[blockIndex].classList.add('hidden');
-        }
-
-        // 5. Revelar todo (Usuario adivinó o acabó el tiempo)
-        function revealAll() {
-            clearInterval(intervalId);
-            blocks.forEach(block => block.classList.add('hidden'));
-            endGame();
-        }
-
-        function endGame() {
-            timerDisplay.textContent = "¡Imagen Revelada!";
-            btnReveal.disabled = true;
-        }
-
-        // 6. Reiniciar todo
-        function resetGame() {
-            clearInterval(intervalId);
-            resetGrid();
-            imageInput.value = ''; // Limpiar input
-            imageInput.disabled = false;
-            timeSelect.disabled = false;
-            btnStart.disabled = false;
-        }
-
     </script>
 </body>
 </html>

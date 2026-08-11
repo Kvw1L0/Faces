@@ -4,18 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Revelar Imagen</title>
-    <!-- Firebase SDK (Compatibilidad para simplificar) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif; background-color: #111; color: #fff;
-            display: flex; flex-direction: column; align-items: center; padding: 20px;
-        }
-        .panel {
-            background: #222; padding: 30px; border-radius: 8px; width: 100%; max-width: 600px;
-            border-top: 4px solid #ffc107; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #111; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .panel { background: #222; padding: 30px; border-radius: 8px; width: 100%; max-width: 600px; border-top: 4px solid #ffc107; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         h1 { color: #ffc107; text-align: center; font-size: 1.5rem; margin-top: 0; }
         .control-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         label { font-size: 0.9rem; color: #aaa; }
@@ -76,29 +67,31 @@
         <div id="statusDisplay">Esperando imágenes...</div>
     </div>
 
-    <script>
-        // CONFIGURACIÓN FIREBASE (REEMPLAZAR)
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            databaseURL: "https://TU_PROYECTO.firebaseio.com",
-            projectId: "TU_PROYECTO",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "ID",
-            appId: "APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const gameRef = db.ref('current_game');
+    <!-- Script tipo módulo para Firebase V9+ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
-        // Variables de Estado
+        const firebaseConfig = {
+            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs",
+            authDomain: "celebrity-baby-35179.firebaseapp.com",
+            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com",
+            projectId: "celebrity-baby-35179",
+            storageBucket: "celebrity-baby-35179.firebasestorage.app",
+            messagingSenderId: "830846373781",
+            appId: "1:830846373781:web:eaa35b292754152d07b09c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const gameRef = ref(db, 'activacion_adivina_personaje');
+
         let playlist = [];
         let currentIndex = -1;
         let intervalId;
         let availableBlocks = [];
         let revealedBlocks = [];
 
-        // DOM Elements
         const imageInput = document.getElementById('imageInput');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
@@ -109,7 +102,6 @@
         const statusDisplay = document.getElementById('statusDisplay');
         const playlistCounter = document.getElementById('playlistCounter');
 
-        // 1. Cargar Imágenes
         imageInput.addEventListener('change', (e) => {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
@@ -129,7 +121,6 @@
                         syncToScreen();
                     }
                 };
-                // Nota: Para optimización en producción, idealmente redimensionar en un canvas antes de convertir a base64
                 reader.readAsDataURL(file); 
             });
         });
@@ -143,11 +134,9 @@
             statusDisplay.innerText = "Listo para iniciar";
         }
 
-        // Navegación
         btnNext.onclick = () => { if(currentIndex < playlist.length - 1) { currentIndex++; syncToScreen(); } };
         btnPrev.onclick = () => { if(currentIndex > 0) { currentIndex--; syncToScreen(); } };
 
-        // 2. Sincronizar estado inicial a Firebase
         function syncToScreen() {
             clearInterval(intervalId);
             revealedBlocks = [];
@@ -156,7 +145,7 @@
             
             availableBlocks = Array.from({length: totalBlocks}, (_, i) => i);
 
-            gameRef.set({
+            set(gameRef, {
                 image: playlist[currentIndex],
                 gridSize: gridSize,
                 status: 'idle',
@@ -165,7 +154,6 @@
             updatePlaylistUI();
         }
 
-        // 3. Iniciar Juego
         btnStart.onclick = () => {
             btnStart.disabled = true;
             btnReveal.disabled = false;
@@ -173,7 +161,7 @@
             btnNext.disabled = true;
             gridSelect.disabled = true;
 
-            gameRef.update({ status: 'playing' });
+            update(gameRef, { status: 'playing' });
             statusDisplay.innerText = "Juego en curso...";
 
             const totalTime = parseInt(timeSelect.value) * 1000;
@@ -190,13 +178,12 @@
                 const blockToReveal = availableBlocks.splice(randIdx, 1)[0];
                 revealedBlocks.push(blockToReveal);
                 
-                gameRef.update({ revealedBlocks: revealedBlocks });
+                update(gameRef, { revealedBlocks: revealedBlocks });
             }, intervalTime);
         };
 
-        // 4. Revelar Todo
         btnReveal.onclick = () => {
-            gameRef.update({ status: 'revealed' });
+            update(gameRef, { status: 'revealed' });
             endGame();
         };
 

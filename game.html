@@ -3,43 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <title>Juego - Pantalla</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000; overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
-        }
-        #game-container {
-            position: relative;
-            width: 90vmin; height: 90vmin; /* Siempre mantiene un cuadrado perfecto */
-            box-shadow: 0 0 30px rgba(255, 193, 7, 0.2);
-            border: 2px solid #333;
-            display: none;
-        }
-        #target-image {
-            width: 100%; height: 100%; object-fit: contain;
-            display: block; background-color: #111;
-        }
-        #grid-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid;
-        }
-        .grid-block {
-            background-color: #ffc107; /* Color sólido minimalista */
-            border: 1px solid rgba(0,0,0,0.8);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
-            opacity: 1; transform: scale(1);
-        }
-        .grid-block.hidden {
-            opacity: 0;
-            transform: scale(0); /* Animación de desaparición dinámica */
-        }
-        #waiting-msg {
-            color: #555; font-family: sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 5px;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        #game-container { position: relative; width: 90vmin; height: 90vmin; box-shadow: 0 0 30px rgba(255, 193, 7, 0.2); border: 2px solid #333; display: none; }
+        #target-image { width: 100%; height: 100%; object-fit: contain; display: block; background-color: #111; }
+        #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s; opacity: 1; transform: scale(1); }
+        .grid-block.hidden { opacity: 0; transform: scale(0); }
+        #waiting-msg { color: #555; font-family: sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 5px; }
     </style>
 </head>
 <body>
@@ -51,19 +23,24 @@
         <div id="grid-overlay"></div>
     </div>
 
-    <script>
-        // MISMA CONFIGURACIÓN FIREBASE QUE EN ADMIN
+    <!-- Script tipo módulo para Firebase V9+ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
         const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            databaseURL: "https://TU_PROYECTO.firebaseio.com",
-            projectId: "TU_PROYECTO",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "ID",
-            appId: "APP_ID"
+            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs",
+            authDomain: "celebrity-baby-35179.firebaseapp.com",
+            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com",
+            projectId: "celebrity-baby-35179",
+            storageBucket: "celebrity-baby-35179.firebasestorage.app",
+            messagingSenderId: "830846373781",
+            appId: "1:830846373781:web:eaa35b292754152d07b09c"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const gameRef = ref(db, 'activacion_adivina_personaje');
         
         const container = document.getElementById('game-container');
         const targetImage = document.getElementById('target-image');
@@ -72,15 +49,13 @@
 
         let currentBlocks = [];
 
-        // Escuchar cambios en tiempo real
-        db.ref('current_game').on('value', (snapshot) => {
+        onValue(gameRef, (snapshot) => {
             const data = snapshot.val();
             if (!data) return;
 
             waitingMsg.style.display = 'none';
             container.style.display = 'block';
 
-            // 1. Manejar cambio de imagen o tamaño de grilla
             if (targetImage.src !== data.image || currentBlocks.length !== (data.gridSize * data.gridSize)) {
                 targetImage.src = data.image;
                 gridOverlay.style.gridTemplateColumns = `repeat(${data.gridSize}, 1fr)`;
@@ -97,11 +72,9 @@
                 }
             }
 
-            // 2. Manejar estado de revelación
             if (data.status === 'revealed') {
                 currentBlocks.forEach(b => b.classList.add('hidden'));
             } else {
-                // Actualizar bloques ocultos según el array de Firebase
                 const revealedIndices = data.revealedBlocks || [];
                 currentBlocks.forEach((block, index) => {
                     if (revealedIndices.includes(index)) {
