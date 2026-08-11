@@ -3,88 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego - Pantalla</title>
+    <title>Pantalla Principal</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        #game-container { position: relative; width: 90vmin; height: 90vmin; box-shadow: 0 0 30px rgba(255, 193, 7, 0.2); border: 2px solid #333; display: none; }
-        #target-image { width: 100%; height: 100%; object-fit: contain; display: block; background-color: #111; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        
+        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 4px solid #ffc107; display: none; box-shadow: 0 0 50px rgba(255,193,7,0.3); }
+        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s; opacity: 1; transform: scale(1); }
+        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.5); transition: transform 0.4s, opacity 0.4s; }
         .grid-block.hidden { opacity: 0; transform: scale(0); }
-        #waiting-msg { color: #555; font-family: sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 5px; }
+        
+        .info-text { font-size: 2.5rem; color: #ffc107; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
+        #correct-answer { display: none; font-size: 3rem; color: #28a745; font-weight: bold; margin-top: 30px; background: rgba(0,0,0,0.8); padding: 10px 30px; border-radius: 10px; }
+        
+        #ranking-container { display: none; width: 80%; max-width: 800px; text-align: center; }
+        .ranking-item { background: #222; margin: 10px 0; padding: 20px; font-size: 2rem; display: flex; justify-content: space-between; border-left: 5px solid #ffc107; }
+        .ranking-item:nth-child(1) { border-left-color: gold; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
-    <div id="waiting-msg">Esperando conexión...</div>
+    <div class="info-text" id="statusText">Esperando conexión...</div>
 
     <div id="game-container">
         <img id="target-image" src="" alt="">
         <div id="grid-overlay"></div>
     </div>
+    
+    <div id="correct-answer"></div>
 
-    <!-- Script tipo módulo para Firebase V9+ -->
+    <div id="ranking-container">
+        <h1 style="color:#ffc107; font-size: 3rem;">🏆 TOP JUGADORES 🏆</h1>
+        <div id="ranking-list"></div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs",
-            authDomain: "celebrity-baby-35179.firebaseapp.com",
-            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com",
-            projectId: "celebrity-baby-35179",
-            storageBucket: "celebrity-baby-35179.firebasestorage.app",
-            messagingSenderId: "830846373781",
-            appId: "1:830846373781:web:eaa35b292754152d07b09c"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const gameRef = ref(db, 'activacion_adivina_personaje');
+        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179", storageBucket: "celebrity-baby-35179.firebasestorage.app", messagingSenderId: "830846373781", appId: "1:830846373781:web:eaa35b292754152d07b09c" };
+        const db = getDatabase(initializeApp(firebaseConfig));
         
         const container = document.getElementById('game-container');
         const targetImage = document.getElementById('target-image');
         const gridOverlay = document.getElementById('grid-overlay');
-        const waitingMsg = document.getElementById('waiting-msg');
-
+        const statusText = document.getElementById('statusText');
+        const correctAnswer = document.getElementById('correct-answer');
+        const rankingContainer = document.getElementById('ranking-container');
+        
         let currentBlocks = [];
+        let globalPlayers = {};
 
-        onValue(gameRef, (snapshot) => {
+        // Escuchar jugadores para el ranking
+        onValue(ref(db, 'activacion_adivina_personaje/jugadores'), (snap) => {
+            globalPlayers = snap.val() || {};
+        });
+
+        onValue(ref(db, 'activacion_adivina_personaje'), (snapshot) => {
             const data = snapshot.val();
-            if (!data) return;
+            if (!data || !data.pregunta_actual) return;
 
-            waitingMsg.style.display = 'none';
-            container.style.display = 'block';
+            const estado = data.estado;
+            const pregunta = data.pregunta_actual;
 
-            if (targetImage.src !== data.image || currentBlocks.length !== (data.gridSize * data.gridSize)) {
-                targetImage.src = data.image;
-                gridOverlay.style.gridTemplateColumns = `repeat(${data.gridSize}, 1fr)`;
-                gridOverlay.style.gridTemplateRows = `repeat(${data.gridSize}, 1fr)`;
-                
+            // Reset vistas
+            container.style.display = 'none';
+            correctAnswer.style.display = 'none';
+            rankingContainer.style.display = 'none';
+            statusText.style.display = 'block';
+
+            if (estado === 'idle') {
+                statusText.innerText = "¡Ingresa desde tu celular para jugar!";
+                container.style.display = 'block';
+                setupGrid(pregunta);
+            } 
+            else if (estado === 'playing') {
+                statusText.innerText = "¡ADIVINA!";
+                container.style.display = 'block';
+                setupGrid(pregunta);
+                updateBlocks(pregunta.revealedBlocks || []);
+            }
+            else if (estado === 'revealed') {
+                statusText.innerText = "¡TIEMPO!";
+                container.style.display = 'block';
+                setupGrid(pregunta);
+                currentBlocks.forEach(b => b.classList.add('hidden'));
+                correctAnswer.innerText = `Respuesta: ${pregunta.opciones[pregunta.correcta]}`;
+                correctAnswer.style.display = 'block';
+            }
+            else if (estado === 'ranking') {
+                statusText.style.display = 'none';
+                rankingContainer.style.display = 'block';
+                renderRanking();
+            }
+        });
+
+        function setupGrid(pregunta) {
+            if (targetImage.src !== pregunta.image || currentBlocks.length !== (pregunta.gridSize * pregunta.gridSize)) {
+                targetImage.src = pregunta.image;
+                gridOverlay.style.gridTemplateColumns = `repeat(${pregunta.gridSize}, 1fr)`;
+                gridOverlay.style.gridTemplateRows = `repeat(${pregunta.gridSize}, 1fr)`;
                 gridOverlay.innerHTML = '';
                 currentBlocks = [];
-                const total = data.gridSize * data.gridSize;
-                for (let i = 0; i < total; i++) {
+                for (let i = 0; i < pregunta.gridSize * pregunta.gridSize; i++) {
                     const block = document.createElement('div');
                     block.classList.add('grid-block');
                     gridOverlay.appendChild(block);
                     currentBlocks.push(block);
                 }
             }
+        }
 
-            if (data.status === 'revealed') {
-                currentBlocks.forEach(b => b.classList.add('hidden'));
-            } else {
-                const revealedIndices = data.revealedBlocks || [];
-                currentBlocks.forEach((block, index) => {
-                    if (revealedIndices.includes(index)) {
-                        block.classList.add('hidden');
-                    } else {
-                        block.classList.remove('hidden');
-                    }
-                });
-            }
-        });
+        function updateBlocks(revealedIndices) {
+            currentBlocks.forEach((block, index) => {
+                if (revealedIndices.includes(index)) block.classList.add('hidden');
+                else block.classList.remove('hidden');
+            });
+        }
+
+        function renderRanking() {
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '';
+            const sorted = Object.values(globalPlayers).sort((a, b) => b.puntaje - a.puntaje).slice(0, 5);
+            
+            if(sorted.length === 0) { list.innerHTML = '<h2>No hay puntajes aún</h2>'; return; }
+
+            sorted.forEach((p, index) => {
+                list.innerHTML += `<div class="ranking-item">
+                    <span>#${index+1} ${p.nombre}</span>
+                    <span style="color:#ffc107">${p.puntaje} pts</span>
+                </div>`;
+            });
+        }
     </script>
 </body>
 </html>
