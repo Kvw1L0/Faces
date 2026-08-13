@@ -3,331 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego - Pantalla</title>
+    <title>Pantalla Gigante - Arcade</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        #game-container { position: relative; width: 90vmin; height: 90vmin; box-shadow: 0 0 30px rgba(255, 193, 7, 0.2); border: 2px solid #333; display: none; }
-        #target-image { width: 100%; height: 100%; object-fit: contain; display: block; background-color: #111; }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        
+        /* LOBBY */
+        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+        .blink-text { color: #ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f; animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        .pin-display { font-size: 8rem; color: #fff; background: #222; border: 8px solid #ffc107; padding: 20px 40px; box-shadow: 10px 10px 0px #d32f2f; }
+        .qr-box { width: 250px; height: 250px; border: 4px solid #fff; background: #fff; display: flex; justify-content: center; align-items: center; }
+        .qr-box img { max-width: 100%; max-height: 100%; }
+
+        /* JUEGO */
+        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #ffc107; display: none; }
+        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; image-rendering: pixelated; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s; opacity: 1; transform: scale(1); }
-        .grid-block.hidden { opacity: 0; transform: scale(0); }
-        #waiting-msg { color: #555; font-family: sans-serif; font-size: 2rem; text-transform: uppercase; letter-spacing: 5px; }
+        .grid-block { background-color: #000; border: 2px solid #222; transition: opacity 0.2s; }
+        .grid-block.hidden { opacity: 0; }
+        
+        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #000; text-align: center; display: none; }
+        #correct-answer { display: none; font-size: 2.5rem; color: #00e676; margin-top: 30px; text-shadow: 4px 4px #000; background: #111; border: 4px solid #00e676; padding: 20px; }
+        
+        /* RANKING ANIMADO */
+        #ranking-container { display: none; width: 90%; max-width: 1000px; text-align: center; }
+        #ranking-list { position: relative; height: 800px; /* Soporta 20 items de 40px */ margin-top: 20px; }
+        .ranking-item { 
+            position: absolute; left: 0; width: 100%; height: 35px; background: #111; border: 2px solid #444; 
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;
+            transition: transform 0.5s ease-in-out, background 0.3s; font-size: 14px;
+        }
+        /* Top 5 Destacados */
+        .ranking-item.top1 { background: #ffc107; color: #000; border-color: #fff; font-size: 20px; height: 50px; z-index: 5; box-shadow: 4px 4px 0 #d32f2f; }
+        .ranking-item.top2 { background: #e0e0e0; color: #000; font-size: 18px; height: 45px; z-index: 4; }
+        .ranking-item.top3 { background: #cd7f32; color: #fff; font-size: 16px; height: 40px; z-index: 3; }
+        .ranking-item.top5 { border-color: #ffc107; color: #ffc107; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="waiting-msg">Esperando conexión...</div>
+    <!-- LOBBY -->
+    <div id="lobby-container">
+        <div class="blink-text">INSERT COIN TO JOIN</div>
+        <div style="font-size: 1.5rem;">PIN DE SALA:</div>
+        <div class="pin-display" id="lobby-pin">----</div>
+        <div class="qr-box">
+            <!-- QR ESTÁTICO AQUÍ -->
+            <img src="qr_estatico.png" alt="QR Code" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#ccc\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'14\'>QR AQUI</text></svg>'">
+        </div>
+    </div>
 
+    <!-- JUEGO -->
+    <div class="info-text" id="statusText">PREPARADOS...</div>
     <div id="game-container">
         <img id="target-image" src="" alt="">
         <div id="grid-overlay"></div>
     </div>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jugar</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #111; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
-        
-        /* Pantallas */
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; }
+    <div id="correct-answer"></div>
 
-        /* Login */
-        #login-screen input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; border-radius: 8px; border: 2px solid #ffc107; background: #222; color: white; margin-bottom: 20px; }
-        .btn-massive { background: #ffc107; color: black; font-size: 1.5rem; font-weight: bold; padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer; width: 80%; }
-        .btn-massive:active { transform: scale(0.95); }
-
-        /* Juego */
-        #mini-game-container { position: relative; width: 80vw; height: 80vw; max-width: 300px; max-height: 300px; border: 2px solid #ffc107; margin-bottom: 20px; }
-        #mini-target-image { width: 100%; height: 100%; object-fit: contain; }
-        #mini-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.5); transition: opacity 0.2s; }
-        .grid-block.hidden { opacity: 0; }
-
-        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
-        .btn-option { background: #333; color: white; padding: 20px 10px; font-size: 1.2rem; font-weight: bold; border: 2px solid #555; border-radius: 10px; cursor: pointer; transition: 0.2s; word-wrap: break-word; }
-        .btn-option.selected { background: #ffc107; color: black; border-color: white; }
-        .btn-option:disabled { opacity: 0.5; }
-
-        /* Resultado */
-        #result-screen h1 { font-size: 3rem; margin: 0; }
-        #result-screen p { font-size: 1.5rem; }
-
-        #score-display { position: absolute; top: 10px; right: 10px; background: rgba(255,193,7,0.2); padding: 5px 10px; border-radius: 5px; color: #ffc107; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-    <div id="score-display">0 pts</div>
-
-    <!-- PANTALLA LOGIN -->
-    <div id="login-screen" class="screen active">
-        <h1 style="color:#ffc107; margin-bottom: 10px;">Únete al Juego</h1>
-        <p style="color:#aaa; text-align:center; margin-bottom: 30px;">Ingresa tu Nickname para participar</p>
-        <input type="text" id="nickname" placeholder="Tu Apodo" maxlength="15">
-        <button class="btn-massive" id="btnJoin">Entrar</button>
+    <!-- RANKING -->
+    <div id="ranking-container">
+        <h1 style="color:#ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f;">HIGH SCORES</h1>
+        <div id="ranking-list"></div>
     </div>
 
-    <!-- PANTALLA JUEGO -->
-    <div id="game-screen" class="screen">
-        <h3 id="game-status-text" style="color:#ffc107;">Mira la pantalla principal...</h3>
-        
-        <div id="mini-game-container" style="display:none;">
-            <img id="mini-target-image" src="" alt="">
-            <div id="mini-grid"></div>
-        </div>
-
-        <div class="options-container" id="options-container" style="display:none;">
-            <button class="btn-option" id="btnOpt0">Opción 1</button>
-            <button class="btn-option" id="btnOpt1">Opción 2</button>
-            <button class="btn-option" id="btnOpt2">Opción 3</button>
-            <button class="btn-option" id="btnOpt3">Opción 4</button>
-        </div>
-    </div>
-
-    <!-- PANTALLA RESULTADO -->
-    <div id="result-screen" class="screen">
-        <h1 id="res-title">...</h1>
-        <p id="res-subtitle">...</p>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
-
-        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179", storageBucket: "celebrity-baby-35179.firebasestorage.app", messagingSenderId: "830846373781", appId: "1:830846373781:web:eaa35b292754152d07b09c" };
-        const db = getDatabase(initializeApp(firebaseConfig));
-
-        let playerId = sessionStorage.getItem('jugador_id');
-        let playerName = sessionStorage.getItem('jugador_nombre');
-        let currentScore = 0;
-        let respondedThisRound = false;
-        let lastAnswerCorrect = false;
-        let pointsEarnedRound = 0;
-
-        const screens = {
-            login: document.getElementById('login-screen'),
-            game: document.getElementById('game-screen'),
-            result: document.getElementById('result-screen')
-        };
-
-        function showScreen(name) {
-            Object.values(screens).forEach(s => s.classList.remove('active'));
-            screens[name].classList.add('active');
-        }
-
-        // Reconexión automática
-        if (playerId) {
-            showScreen('game');
-            listenToGame();
-            listenToMyScore();
-        }
-
-        document.getElementById('btnJoin').onclick = () => {
-            const nick = document.getElementById('nickname').value.trim();
-            if(nick.length < 2) { alert("Ingresa un nombre válido"); return; }
-            
-            playerId = 'user_' + Math.random().toString(36).substr(2, 9);
-            playerName = nick;
-            sessionStorage.setItem('jugador_id', playerId);
-            sessionStorage.setItem('jugador_nombre', playerName);
-            
-            // Registrar en base de datos
-            set(ref(db, `activacion_adivina_personaje/jugadores/${playerId}`), { nombre: playerName, puntaje: 0 });
-            
-            showScreen('game');
-            listenToGame();
-            listenToMyScore();
-        };
-
-        function listenToMyScore() {
-            onValue(ref(db, `activacion_adivina_personaje/jugadores/${playerId}/puntaje`), (snap) => {
-                currentScore = snap.val() || 0;
-                document.getElementById('score-display').innerText = `${currentScore} pts`;
-            });
-        }
-
-        let currentBlocks = [];
-        const miniGrid = document.getElementById('mini-grid');
-        const miniImg = document.getElementById('mini-target-image');
-
-        function listenToGame() {
-            onValue(ref(db, 'activacion_adivina_personaje'), (snapshot) => {
-                const data = snapshot.val();
-                if (!data || !data.pregunta_actual) return;
-
-                const estado = data.estado;
-                const preg = data.pregunta_actual;
-
-                if (estado === 'idle') {
-                    showScreen('game');
-                    document.getElementById('game-status-text').innerText = "Prepárate...";
-                    document.getElementById('mini-game-container').style.display = 'none';
-                    document.getElementById('options-container').style.display = 'none';
-                    respondedThisRound = false;
-                    
-                    // Preparar UI mini grilla
-                    if (miniImg.src !== preg.image) {
-                        miniImg.src = preg.image;
-                        miniGrid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
-                        miniGrid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
-                        miniGrid.innerHTML = '';
-                        currentBlocks = [];
-                        for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
-                            const block = document.createElement('div');
-                            block.classList.add('grid-block');
-                            miniGrid.appendChild(block);
-                            currentBlocks.push(block);
-                        }
-                    }
-                    
-                    // Llenar botones
-                    for(let i=0; i<4; i++) {
-                        const btn = document.getElementById(`btnOpt${i}`);
-                        btn.innerText = preg.opciones[i];
-                        btn.disabled = false;
-                        btn.classList.remove('selected');
-                        
-                        // Lógica de respuesta
-                        btn.onclick = () => {
-                            if(respondedThisRound) return;
-                            respondedThisRound = true;
-                            if(navigator.vibrate) navigator.vibrate(50);
-                            
-                            // Desactivar visualmente los demás
-                            for(let j=0; j<4; j++) document.getElementById(`btnOpt${j}`).disabled = true;
-                            btn.classList.add('selected');
-                            document.getElementById('game-status-text').innerText = "Respuesta enviada...";
-
-                            // Calcular puntaje
-                            const timeTaken = Date.now() - preg.startTime;
-                            const maxTime = preg.totalTimeSecs * 1000;
-                            
-                            if (i === preg.correcta) {
-                                lastAnswerCorrect = true;
-                                // Fórmula: Rápido = más puntos. Máx 1000.
-                                let scoreRound = Math.floor(1000 * (1 - (timeTaken / maxTime)));
-                                if (scoreRound < 100) scoreRound = 100; // Mínimo 100 pts si acierta
-                                if (timeTaken > maxTime) scoreRound = 0; // Fuera de tiempo
-                                pointsEarnedRound = scoreRound;
-                                
-                                // Sumar a DB
-                                update(ref(db, `activacion_adivina_personaje/jugadores/${playerId}`), {
-                                    puntaje: currentScore + scoreRound
-                                });
-                            } else {
-                                lastAnswerCorrect = false;
-                                pointsEarnedRound = 0;
-                            }
-                        };
-                    }
-                } 
-                else if (estado === 'playing') {
-                    showScreen('game');
-                    document.getElementById('game-status-text').innerText = respondedThisRound ? "Respuesta enviada..." : "¿Quién es?";
-                    document.getElementById('mini-game-container').style.display = 'block';
-                    document.getElementById('options-container').style.display = 'grid';
-                    
-                    // Sincronizar grilla visualmente
-                    const revealed = preg.revealedBlocks || [];
-                    currentBlocks.forEach((block, idx) => {
-                        if (revealed.includes(idx)) block.classList.add('hidden');
-                        else block.classList.remove('hidden');
-                    });
-                }
-                else if (estado === 'revealed') {
-                    showScreen('result');
-                    const scr = screens.result;
-                    if (!respondedThisRound) {
-                        scr.style.backgroundColor = "#555";
-                        document.getElementById('res-title').innerText = "¡Tiempo agotado!";
-                        document.getElementById('res-subtitle').innerText = "No respondiste.";
-                    } else if (lastAnswerCorrect) {
-                        scr.style.backgroundColor = "#28a745"; // Verde
-                        document.getElementById('res-title').innerText = "¡CORRECTO!";
-                        document.getElementById('res-subtitle').innerText = `+${pointsEarnedRound} Puntos`;
-                    } else {
-                        scr.style.backgroundColor = "#dc3545"; // Rojo
-                        document.getElementById('res-title').innerText = "¡INCORRECTO!";
-                        document.getElementById('res-subtitle').innerText = "0 Puntos";
-                    }
-                }
-                else if (estado === 'ranking') {
-                    showScreen('result');
-                    screens.result.style.backgroundColor = "#111";
-                    document.getElementById('res-title').innerText = "¡Mira la pantalla!";
-                    document.getElementById('res-subtitle').innerText = "Revisa si estás en el Top 5";
-                }
-            });
-        }
-    </script>
-</body>
-</html>
-    <!-- Script tipo módulo para Firebase V9+ -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs",
-            authDomain: "celebrity-baby-35179.firebaseapp.com",
-            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com",
-            projectId: "celebrity-baby-35179",
-            storageBucket: "celebrity-baby-35179.firebasestorage.app",
-            messagingSenderId: "830846373781",
-            appId: "1:830846373781:web:eaa35b292754152d07b09c"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const gameRef = ref(db, 'activacion_adivina_personaje');
+        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
+        const db = getDatabase(initializeApp(firebaseConfig));
         
-        const container = document.getElementById('game-container');
-        const targetImage = document.getElementById('target-image');
-        const gridOverlay = document.getElementById('grid-overlay');
-        const waitingMsg = document.getElementById('waiting-msg');
+        let activeRoomRef = null;
+        let globalPlayers = {};
+
+        // 1. Escuchar la Sala Activa
+        onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
+            const pin = snap.val();
+            if(pin) {
+                document.getElementById('lobby-pin').innerText = pin;
+                if(activeRoomRef) return; // Ya estamos escuchando esta sala
+                
+                // Conectarse a los eventos de esta sala
+                activeRoomRef = ref(db, `activacion_arcade/salas/${pin}`);
+                
+                // Escuchar Jugadores
+                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (jugadoresSnap) => {
+                    globalPlayers = jugadoresSnap.val() || {};
+                    if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
+                });
+
+                // Escuchar Estado
+                onValue(activeRoomRef, (estadoSnap) => {
+                    const data = estadoSnap.val();
+                    if (!data) return;
+                    handleGameState(data);
+                });
+            } else {
+                document.getElementById('lobby-pin').innerText = "----";
+                document.getElementById('lobby-container').style.display = 'flex';
+                document.getElementById('game-container').style.display = 'none';
+                document.getElementById('ranking-container').style.display = 'none';
+            }
+        });
 
         let currentBlocks = [];
+        const container = document.getElementById('game-container');
+        const gridOverlay = document.getElementById('grid-overlay');
 
-        onValue(gameRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
+        function handleGameState(data) {
+            const estado = data.estado;
+            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
+            container.style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'block' : 'none';
+            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
+            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
+            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
 
-            waitingMsg.style.display = 'none';
-            container.style.display = 'block';
-
-            if (targetImage.src !== data.image || currentBlocks.length !== (data.gridSize * data.gridSize)) {
-                targetImage.src = data.image;
-                gridOverlay.style.gridTemplateColumns = `repeat(${data.gridSize}, 1fr)`;
-                gridOverlay.style.gridTemplateRows = `repeat(${data.gridSize}, 1fr)`;
+            if(data.pregunta_actual && estado !== 'lobby' && estado !== 'ranking') {
+                const preg = data.pregunta_actual;
+                if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
+                    document.getElementById('target-image').src = preg.image;
+                    gridOverlay.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
+                    gridOverlay.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                    gridOverlay.innerHTML = '';
+                    currentBlocks = [];
+                    for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                        const block = document.createElement('div');
+                        block.classList.add('grid-block');
+                        gridOverlay.appendChild(block);
+                        currentBlocks.push(block);
+                    }
+                }
                 
-                gridOverlay.innerHTML = '';
-                currentBlocks = [];
-                const total = data.gridSize * data.gridSize;
-                for (let i = 0; i < total; i++) {
-                    const block = document.createElement('div');
-                    block.classList.add('grid-block');
-                    gridOverlay.appendChild(block);
-                    currentBlocks.push(block);
+                if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; }
+                if (estado === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; updateBlocks(preg.revealedBlocks || []); }
+                if (estado === 'revealed') { 
+                    currentBlocks.forEach(b => b.classList.add('hidden'));
+                    document.getElementById('correct-answer').innerText = `RESPUESTA: ${preg.opciones[preg.correcta]}`;
                 }
             }
 
-            if (data.status === 'revealed') {
-                currentBlocks.forEach(b => b.classList.add('hidden'));
-            } else {
-                const revealedIndices = data.revealedBlocks || [];
-                currentBlocks.forEach((block, index) => {
-                    if (revealedIndices.includes(index)) {
-                        block.classList.add('hidden');
-                    } else {
-                        block.classList.remove('hidden');
-                    }
-                });
-            }
-        });
+            if(estado === 'ranking') renderRanking();
+        }
+
+        function updateBlocks(revealedIndices) {
+            currentBlocks.forEach((b, i) => revealedIndices.includes(i) ? b.classList.add('hidden') : b.classList.remove('hidden'));
+        }
+
+        function renderRanking() {
+            const list = document.getElementById('ranking-list');
+            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20); // Top 20
+            
+            let yOffset = 0;
+
+            sorted.forEach((player, index) => {
+                let el = document.getElementById('rank-' + player.id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'rank-' + player.id;
+                    list.appendChild(el);
+                }
+                
+                // Reiniciar clases
+                el.className = 'ranking-item';
+                if (index === 0) el.classList.add('top1');
+                else if (index === 1) el.classList.add('top2');
+                else if (index === 2) el.classList.add('top3');
+                else if (index <= 4) el.classList.add('top5');
+
+                el.innerHTML = `<span>#${index+1} ${player.nombre}</span><span>${player.puntaje}</span>`;
+                
+                // Animar posición Y
+                el.style.transform = `translateY(${yOffset}px)`;
+                
+                // Calcular espacio para el siguiente (Top 3 son más altos)
+                if(index === 0) yOffset += 60;
+                else if(index === 1) yOffset += 55;
+                else if(index === 2) yOffset += 50;
+                else yOffset += 45;
+            });
+        }
     </script>
 </body>
 </html>

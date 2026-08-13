@@ -3,37 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pantalla Principal</title>
+    <title>Pantalla Gigante - Arcade</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
-        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 4px solid #ffc107; display: none; box-shadow: 0 0 50px rgba(255,193,7,0.3); }
-        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        
+        /* LOBBY */
+        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+        .blink-text { color: #ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f; animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        .pin-display { font-size: 8rem; color: #fff; background: #222; border: 8px solid #ffc107; padding: 20px 40px; box-shadow: 10px 10px 0px #d32f2f; }
+        .qr-box { width: 250px; height: 250px; border: 4px solid #fff; background: #fff; display: flex; justify-content: center; align-items: center; }
+        .qr-box img { max-width: 100%; max-height: 100%; }
+
+        /* JUEGO */
+        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #ffc107; display: none; }
+        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; image-rendering: pixelated; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.5); transition: transform 0.4s, opacity 0.4s; }
-        .grid-block.hidden { opacity: 0; transform: scale(0); }
+        .grid-block { background-color: #000; border: 2px solid #222; transition: opacity 0.2s; }
+        .grid-block.hidden { opacity: 0; }
         
-        .info-text { font-size: 2.5rem; color: #ffc107; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
-        #correct-answer { display: none; font-size: 3rem; color: #28a745; font-weight: bold; margin-top: 30px; background: rgba(0,0,0,0.8); padding: 10px 30px; border-radius: 10px; }
+        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #000; text-align: center; display: none; }
+        #correct-answer { display: none; font-size: 2.5rem; color: #00e676; margin-top: 30px; text-shadow: 4px 4px #000; background: #111; border: 4px solid #00e676; padding: 20px; }
         
-        #ranking-container { display: none; width: 80%; max-width: 800px; text-align: center; }
-        .ranking-item { background: #222; margin: 10px 0; padding: 20px; font-size: 2rem; display: flex; justify-content: space-between; border-left: 5px solid #ffc107; }
-        .ranking-item:nth-child(1) { border-left-color: gold; transform: scale(1.05); }
+        /* RANKING ANIMADO */
+        #ranking-container { display: none; width: 90%; max-width: 1000px; text-align: center; }
+        #ranking-list { position: relative; height: 800px; /* Soporta 20 items de 40px */ margin-top: 20px; }
+        .ranking-item { 
+            position: absolute; left: 0; width: 100%; height: 35px; background: #111; border: 2px solid #444; 
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;
+            transition: transform 0.5s ease-in-out, background 0.3s; font-size: 14px;
+        }
+        /* Top 5 Destacados */
+        .ranking-item.top1 { background: #ffc107; color: #000; border-color: #fff; font-size: 20px; height: 50px; z-index: 5; box-shadow: 4px 4px 0 #d32f2f; }
+        .ranking-item.top2 { background: #e0e0e0; color: #000; font-size: 18px; height: 45px; z-index: 4; }
+        .ranking-item.top3 { background: #cd7f32; color: #fff; font-size: 16px; height: 40px; z-index: 3; }
+        .ranking-item.top5 { border-color: #ffc107; color: #ffc107; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="info-text" id="statusText">Esperando conexión...</div>
+    <!-- LOBBY -->
+    <div id="lobby-container">
+        <div class="blink-text">INSERT COIN TO JOIN</div>
+        <div style="font-size: 1.5rem;">PIN DE SALA:</div>
+        <div class="pin-display" id="lobby-pin">----</div>
+        <div class="qr-box">
+            <!-- QR ESTÁTICO AQUÍ -->
+            <img src="qr_estatico.png" alt="QR Code" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#ccc\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'14\'>QR AQUI</text></svg>'">
+        </div>
+    </div>
 
+    <!-- JUEGO -->
+    <div class="info-text" id="statusText">PREPARADOS...</div>
     <div id="game-container">
         <img id="target-image" src="" alt="">
         <div id="grid-overlay"></div>
     </div>
-    
     <div id="correct-answer"></div>
 
+    <!-- RANKING -->
     <div id="ranking-container">
-        <h1 style="color:#ffc107; font-size: 3rem;">🏆 TOP JUGADORES 🏆</h1>
+        <h1 style="color:#ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f;">HIGH SCORES</h1>
         <div id="ranking-list"></div>
     </div>
 
@@ -41,98 +73,116 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179", storageBucket: "celebrity-baby-35179.firebasestorage.app", messagingSenderId: "830846373781", appId: "1:830846373781:web:eaa35b292754152d07b09c" };
+        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
         const db = getDatabase(initializeApp(firebaseConfig));
         
-        const container = document.getElementById('game-container');
-        const targetImage = document.getElementById('target-image');
-        const gridOverlay = document.getElementById('grid-overlay');
-        const statusText = document.getElementById('statusText');
-        const correctAnswer = document.getElementById('correct-answer');
-        const rankingContainer = document.getElementById('ranking-container');
-        
-        let currentBlocks = [];
+        let activeRoomRef = null;
         let globalPlayers = {};
 
-        // Escuchar jugadores para el ranking
-        onValue(ref(db, 'activacion_adivina_personaje/jugadores'), (snap) => {
-            globalPlayers = snap.val() || {};
+        // 1. Escuchar la Sala Activa
+        onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
+            const pin = snap.val();
+            if(pin) {
+                document.getElementById('lobby-pin').innerText = pin;
+                if(activeRoomRef) return; // Ya estamos escuchando esta sala
+                
+                // Conectarse a los eventos de esta sala
+                activeRoomRef = ref(db, `activacion_arcade/salas/${pin}`);
+                
+                // Escuchar Jugadores
+                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (jugadoresSnap) => {
+                    globalPlayers = jugadoresSnap.val() || {};
+                    if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
+                });
+
+                // Escuchar Estado
+                onValue(activeRoomRef, (estadoSnap) => {
+                    const data = estadoSnap.val();
+                    if (!data) return;
+                    handleGameState(data);
+                });
+            } else {
+                document.getElementById('lobby-pin').innerText = "----";
+                document.getElementById('lobby-container').style.display = 'flex';
+                document.getElementById('game-container').style.display = 'none';
+                document.getElementById('ranking-container').style.display = 'none';
+            }
         });
 
-        onValue(ref(db, 'activacion_adivina_personaje'), (snapshot) => {
-            const data = snapshot.val();
-            if (!data || !data.pregunta_actual) return;
+        let currentBlocks = [];
+        const container = document.getElementById('game-container');
+        const gridOverlay = document.getElementById('grid-overlay');
 
+        function handleGameState(data) {
             const estado = data.estado;
-            const pregunta = data.pregunta_actual;
+            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
+            container.style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'block' : 'none';
+            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
+            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
+            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
 
-            // Reset vistas
-            container.style.display = 'none';
-            correctAnswer.style.display = 'none';
-            rankingContainer.style.display = 'none';
-            statusText.style.display = 'block';
-
-            if (estado === 'idle') {
-                statusText.innerText = "¡Ingresa desde tu celular para jugar!";
-                container.style.display = 'block';
-                setupGrid(pregunta);
-            } 
-            else if (estado === 'playing') {
-                statusText.innerText = "¡ADIVINA!";
-                container.style.display = 'block';
-                setupGrid(pregunta);
-                updateBlocks(pregunta.revealedBlocks || []);
-            }
-            else if (estado === 'revealed') {
-                statusText.innerText = "¡TIEMPO!";
-                container.style.display = 'block';
-                setupGrid(pregunta);
-                currentBlocks.forEach(b => b.classList.add('hidden'));
-                correctAnswer.innerText = `Respuesta: ${pregunta.opciones[pregunta.correcta]}`;
-                correctAnswer.style.display = 'block';
-            }
-            else if (estado === 'ranking') {
-                statusText.style.display = 'none';
-                rankingContainer.style.display = 'block';
-                renderRanking();
-            }
-        });
-
-        function setupGrid(pregunta) {
-            if (targetImage.src !== pregunta.image || currentBlocks.length !== (pregunta.gridSize * pregunta.gridSize)) {
-                targetImage.src = pregunta.image;
-                gridOverlay.style.gridTemplateColumns = `repeat(${pregunta.gridSize}, 1fr)`;
-                gridOverlay.style.gridTemplateRows = `repeat(${pregunta.gridSize}, 1fr)`;
-                gridOverlay.innerHTML = '';
-                currentBlocks = [];
-                for (let i = 0; i < pregunta.gridSize * pregunta.gridSize; i++) {
-                    const block = document.createElement('div');
-                    block.classList.add('grid-block');
-                    gridOverlay.appendChild(block);
-                    currentBlocks.push(block);
+            if(data.pregunta_actual && estado !== 'lobby' && estado !== 'ranking') {
+                const preg = data.pregunta_actual;
+                if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
+                    document.getElementById('target-image').src = preg.image;
+                    gridOverlay.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
+                    gridOverlay.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                    gridOverlay.innerHTML = '';
+                    currentBlocks = [];
+                    for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                        const block = document.createElement('div');
+                        block.classList.add('grid-block');
+                        gridOverlay.appendChild(block);
+                        currentBlocks.push(block);
+                    }
+                }
+                
+                if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; }
+                if (estado === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; updateBlocks(preg.revealedBlocks || []); }
+                if (estado === 'revealed') { 
+                    currentBlocks.forEach(b => b.classList.add('hidden'));
+                    document.getElementById('correct-answer').innerText = `RESPUESTA: ${preg.opciones[preg.correcta]}`;
                 }
             }
+
+            if(estado === 'ranking') renderRanking();
         }
 
         function updateBlocks(revealedIndices) {
-            currentBlocks.forEach((block, index) => {
-                if (revealedIndices.includes(index)) block.classList.add('hidden');
-                else block.classList.remove('hidden');
-            });
+            currentBlocks.forEach((b, i) => revealedIndices.includes(i) ? b.classList.add('hidden') : b.classList.remove('hidden'));
         }
 
         function renderRanking() {
             const list = document.getElementById('ranking-list');
-            list.innerHTML = '';
-            const sorted = Object.values(globalPlayers).sort((a, b) => b.puntaje - a.puntaje).slice(0, 5);
+            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20); // Top 20
             
-            if(sorted.length === 0) { list.innerHTML = '<h2>No hay puntajes aún</h2>'; return; }
+            let yOffset = 0;
 
-            sorted.forEach((p, index) => {
-                list.innerHTML += `<div class="ranking-item">
-                    <span>#${index+1} ${p.nombre}</span>
-                    <span style="color:#ffc107">${p.puntaje} pts</span>
-                </div>`;
+            sorted.forEach((player, index) => {
+                let el = document.getElementById('rank-' + player.id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'rank-' + player.id;
+                    list.appendChild(el);
+                }
+                
+                // Reiniciar clases
+                el.className = 'ranking-item';
+                if (index === 0) el.classList.add('top1');
+                else if (index === 1) el.classList.add('top2');
+                else if (index === 2) el.classList.add('top3');
+                else if (index <= 4) el.classList.add('top5');
+
+                el.innerHTML = `<span>#${index+1} ${player.nombre}</span><span>${player.puntaje}</span>`;
+                
+                // Animar posición Y
+                el.style.transform = `translateY(${yOffset}px)`;
+                
+                // Calcular espacio para el siguiente (Top 3 son más altos)
+                if(index === 0) yOffset += 60;
+                else if(index === 1) yOffset += 55;
+                else if(index === 2) yOffset += 50;
+                else yOffset += 45;
             });
         }
     </script>
