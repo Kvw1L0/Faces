@@ -2,187 +2,233 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pantalla Gigante - Arcade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jugar - Arcade</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; align-items: center; }
         
-        /* LOBBY */
-        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-        .blink-text { color: #ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f; animation: blinker 1.5s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-        .pin-display { font-size: 8rem; color: #fff; background: #222; border: 8px solid #ffc107; padding: 20px 40px; box-shadow: 10px 10px 0px #d32f2f; }
-        .qr-box { width: 250px; height: 250px; border: 4px solid #fff; background: #fff; display: flex; justify-content: center; align-items: center; }
-        .qr-box img { max-width: 100%; max-height: 100%; }
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; }
 
-        /* JUEGO */
-        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #ffc107; display: none; }
-        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; image-rendering: pixelated; }
-        #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #000; border: 2px solid #222; transition: opacity 0.2s; }
+        /* Login */
+        #login-screen input { width: 80%; max-width: 300px; padding: 15px; font-size: 14px; text-align: center; border: 4px solid #fff; background: #111; color: #ffc107; margin-bottom: 20px; font-family: 'Press Start 2P', monospace; text-transform: uppercase;}
+        
+        .btn-arcade { background: #ffc107; color: #000; font-size: 16px; padding: 15px; border: 4px solid #fff; box-shadow: 6px 6px 0px #d32f2f; cursor: pointer; text-transform: uppercase; font-family: 'Press Start 2P', monospace; width: 80%; max-width: 300px; transition: 0.1s;}
+        .btn-arcade:active { box-shadow: 0px 0px 0px #d32f2f; transform: translate(6px, 6px); }
+
+        /* Juego */
+        #mini-game-container { position: relative; width: 80vw; height: 80vw; max-width: 250px; max-height: 250px; border: 4px solid #fff; margin-bottom: 20px; background:#111; }
+        #mini-target-image { width: 100%; height: 100%; object-fit: contain; }
+        #mini-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        .grid-block { background-color: #000; border: 1px solid #222; transition: opacity 0.2s; }
         .grid-block.hidden { opacity: 0; }
-        
-        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #000; text-align: center; display: none; }
-        #correct-answer { display: none; font-size: 2.5rem; color: #00e676; margin-top: 30px; text-shadow: 4px 4px #000; background: #111; border: 4px solid #00e676; padding: 20px; }
-        
-        /* RANKING ANIMADO */
-        #ranking-container { display: none; width: 90%; max-width: 1000px; text-align: center; }
-        #ranking-list { position: relative; height: 800px; /* Soporta 20 items de 40px */ margin-top: 20px; }
-        .ranking-item { 
-            position: absolute; left: 0; width: 100%; height: 35px; background: #111; border: 2px solid #444; 
-            display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;
-            transition: transform 0.5s ease-in-out, background 0.3s; font-size: 14px;
-        }
-        /* Top 5 Destacados */
-        .ranking-item.top1 { background: #ffc107; color: #000; border-color: #fff; font-size: 20px; height: 50px; z-index: 5; box-shadow: 4px 4px 0 #d32f2f; }
-        .ranking-item.top2 { background: #e0e0e0; color: #000; font-size: 18px; height: 45px; z-index: 4; }
-        .ranking-item.top3 { background: #cd7f32; color: #fff; font-size: 16px; height: 40px; z-index: 3; }
-        .ranking-item.top5 { border-color: #ffc107; color: #ffc107; font-weight: bold; }
+
+        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
+        .btn-option { background: #222; color: white; padding: 20px 10px; font-size: 10px; border: 4px solid #fff; box-shadow: 4px 4px 0px #444; cursor: pointer; word-wrap: break-word; font-family: 'Press Start 2P', monospace; transition: 0.1s;}
+        .btn-option.selected { background: #ffc107; color: #000; border-color: #fff; box-shadow: 4px 4px 0px #d32f2f; }
+        .btn-option:disabled { opacity: 0.5; box-shadow: none; transform: translate(4px,4px); }
+
+        /* Resultado */
+        #result-screen h1 { font-size: 24px; text-shadow: 4px 4px #000; text-align: center; line-height: 1.5;}
+        #result-screen p { font-size: 14px; margin-top:20px;}
+
+        #score-display { position: absolute; top: 10px; right: 10px; font-size: 10px; color: #ffc107; background: #222; padding: 10px; border: 2px solid #fff; }
     </style>
 </head>
 <body>
 
-    <!-- LOBBY -->
-    <div id="lobby-container">
-        <div class="blink-text">INSERT COIN TO JOIN</div>
-        <div style="font-size: 1.5rem;">PIN DE SALA:</div>
-        <div class="pin-display" id="lobby-pin">----</div>
-        <div class="qr-box">
-            <!-- QR ESTÁTICO AQUÍ -->
-            <img src="qr_estatico.png" alt="QR Code" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#ccc\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'14\'>QR AQUI</text></svg>'">
+    <div id="score-display" style="display:none;">0 PTS</div>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="login-screen" class="screen active">
+        <h1 style="color:#ffc107; margin-bottom: 30px; text-shadow: 4px 4px #d32f2f; text-align: center;">JOIN<br>GAME</h1>
+        <input type="text" id="pinInput" placeholder="PIN SALA" maxlength="5" pattern="[0-9]*" inputmode="numeric">
+        <input type="text" id="nickname" placeholder="NICKNAME" maxlength="12">
+        <button class="btn-arcade" id="btnJoin">START</button>
+    </div>
+
+    <!-- PANTALLA JUEGO -->
+    <div id="game-screen" class="screen">
+        <div id="game-status-text" style="color:#fff; font-size: 12px; margin-bottom: 15px; text-align: center; line-height: 1.5;">MIRA LA PANTALLA...</div>
+        
+        <div id="mini-game-container" style="display:none;">
+            <img id="mini-target-image" src="" alt="">
+            <div id="mini-grid"></div>
+        </div>
+
+        <div class="options-container" id="options-container" style="display:none;">
+            <button class="btn-option" id="btnOpt0">OPT 1</button>
+            <button class="btn-option" id="btnOpt1">OPT 2</button>
+            <button class="btn-option" id="btnOpt2">OPT 3</button>
+            <button class="btn-option" id="btnOpt3">OPT 4</button>
         </div>
     </div>
 
-    <!-- JUEGO -->
-    <div class="info-text" id="statusText">PREPARADOS...</div>
-    <div id="game-container">
-        <img id="target-image" src="" alt="">
-        <div id="grid-overlay"></div>
-    </div>
-    <div id="correct-answer"></div>
-
-    <!-- RANKING -->
-    <div id="ranking-container">
-        <h1 style="color:#ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f;">HIGH SCORES</h1>
-        <div id="ranking-list"></div>
+    <!-- PANTALLA RESULTADO -->
+    <div id="result-screen" class="screen">
+        <h1 id="res-title">...</h1>
+        <p id="res-subtitle">...</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, get, child, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
         const db = getDatabase(initializeApp(firebaseConfig));
+
+        let currentRoom = sessionStorage.getItem('arcade_room');
+        let playerId = sessionStorage.getItem('arcade_id');
+        let playerName = sessionStorage.getItem('arcade_name');
         
-        let activeRoomRef = null;
-        let globalPlayers = {};
+        let currentScore = 0;
+        let respondedThisRound = false;
+        let lastAnswerCorrect = false;
+        let pointsEarnedRound = 0;
 
-        // 1. Escuchar la Sala Activa
-        onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
-            const pin = snap.val();
-            if(pin) {
-                document.getElementById('lobby-pin').innerText = pin;
-                if(activeRoomRef) return; // Ya estamos escuchando esta sala
-                
-                // Conectarse a los eventos de esta sala
-                activeRoomRef = ref(db, `activacion_arcade/salas/${pin}`);
-                
-                // Escuchar Jugadores
-                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (jugadoresSnap) => {
-                    globalPlayers = jugadoresSnap.val() || {};
-                    if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
-                });
+        const screens = { login: document.getElementById('login-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
+        function showScreen(name) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[name].classList.add('active'); }
 
-                // Escuchar Estado
-                onValue(activeRoomRef, (estadoSnap) => {
-                    const data = estadoSnap.val();
-                    if (!data) return;
-                    handleGameState(data);
-                });
-            } else {
-                document.getElementById('lobby-pin').innerText = "----";
-                document.getElementById('lobby-container').style.display = 'flex';
-                document.getElementById('game-container').style.display = 'none';
-                document.getElementById('ranking-container').style.display = 'none';
-            }
-        });
+        if (playerId && currentRoom) {
+            document.getElementById('score-display').style.display = 'block';
+            listenToGame();
+            listenToMyScore();
+        }
+
+        document.getElementById('btnJoin').onclick = () => {
+            const pin = document.getElementById('pinInput').value.trim();
+            const nick = document.getElementById('nickname').value.trim().toUpperCase();
+            
+            if(pin.length < 4 || nick.length < 2) { alert("DATOS INVÁLIDOS"); return; }
+            
+            // Validar que la sala exista
+            get(child(ref(db), `activacion_arcade/salas/${pin}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    playerId = 'p_' + Math.random().toString(36).substr(2, 6);
+                    playerName = nick;
+                    currentRoom = pin;
+                    
+                    sessionStorage.setItem('arcade_room', pin);
+                    sessionStorage.setItem('arcade_id', playerId);
+                    sessionStorage.setItem('arcade_name', playerName);
+                    
+                    set(ref(db, `activacion_arcade/salas/${pin}/jugadores/${playerId}`), { nombre: playerName, puntaje: 0 });
+                    
+                    document.getElementById('score-display').style.display = 'block';
+                    listenToGame();
+                    listenToMyScore();
+                } else {
+                    alert("SALA NO ENCONTRADA");
+                }
+            });
+        };
+
+        function listenToMyScore() {
+            onValue(ref(db, `activacion_arcade/salas/${currentRoom}/jugadores/${playerId}/puntaje`), (snap) => {
+                currentScore = snap.val() || 0;
+                document.getElementById('score-display').innerText = `${currentScore} PTS`;
+            });
+        }
 
         let currentBlocks = [];
-        const container = document.getElementById('game-container');
-        const gridOverlay = document.getElementById('grid-overlay');
+        const miniGrid = document.getElementById('mini-grid');
+        const miniImg = document.getElementById('mini-target-image');
 
-        function handleGameState(data) {
-            const estado = data.estado;
-            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
-            container.style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'block' : 'none';
-            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
-            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
-            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
+        function listenToGame() {
+            onValue(ref(db, `activacion_arcade/salas/${currentRoom}`), (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    // Sala cerrada
+                    sessionStorage.clear();
+                    location.reload();
+                    return;
+                }
 
-            if(data.pregunta_actual && estado !== 'lobby' && estado !== 'ranking') {
+                const estado = data.estado;
                 const preg = data.pregunta_actual;
-                if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
-                    document.getElementById('target-image').src = preg.image;
-                    gridOverlay.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
-                    gridOverlay.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
-                    gridOverlay.innerHTML = '';
-                    currentBlocks = [];
-                    for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
-                        const block = document.createElement('div');
-                        block.classList.add('grid-block');
-                        gridOverlay.appendChild(block);
-                        currentBlocks.push(block);
+
+                if (estado === 'lobby' || estado === 'idle') {
+                    showScreen('game');
+                    document.getElementById('game-status-text').innerText = estado === 'lobby' ? "ESPERANDO A QUE INICIE EL JUEGO..." : "PREPÁRATE...";
+                    document.getElementById('mini-game-container').style.display = 'none';
+                    document.getElementById('options-container').style.display = 'none';
+                    respondedThisRound = false;
+                    
+                    if(preg && estado === 'idle') {
+                        if (miniImg.src !== preg.image) {
+                            miniImg.src = preg.image;
+                            miniGrid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
+                            miniGrid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                            miniGrid.innerHTML = '';
+                            currentBlocks = [];
+                            for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                                const b = document.createElement('div'); b.className = 'grid-block';
+                                miniGrid.appendChild(b); currentBlocks.push(b);
+                            }
+                        }
+                        for(let i=0; i<4; i++) {
+                            const btn = document.getElementById(`btnOpt${i}`);
+                            btn.innerText = preg.opciones[i]; btn.disabled = false; btn.classList.remove('selected');
+                            
+                            btn.onclick = () => {
+                                if(respondedThisRound) return;
+                                respondedThisRound = true;
+                                if(navigator.vibrate) navigator.vibrate(50);
+                                
+                                for(let j=0; j<4; j++) document.getElementById(`btnOpt${j}`).disabled = true;
+                                btn.classList.add('selected');
+                                document.getElementById('game-status-text').innerText = "ENVIADO. ESPERANDO...";
+
+                                const timeTaken = Date.now() - preg.startTime;
+                                const maxTime = preg.totalTimeSecs * 1000;
+                                
+                                if (i === preg.correcta) {
+                                    lastAnswerCorrect = true;
+                                    let score = Math.floor(1000 * (1 - (timeTaken / maxTime)));
+                                    if (score < 100) score = 100; if (timeTaken > maxTime) score = 0;
+                                    pointsEarnedRound = score;
+                                    update(ref(db, `activacion_arcade/salas/${currentRoom}/jugadores/${playerId}`), { puntaje: currentScore + score });
+                                } else {
+                                    lastAnswerCorrect = false; pointsEarnedRound = 0;
+                                }
+                            };
+                        }
+                    }
+                } 
+                else if (estado === 'playing') {
+                    showScreen('game');
+                    document.getElementById('game-status-text').innerText = respondedThisRound ? "ENVIADO. ESPERANDO..." : "¿QUIÉN ES?";
+                    document.getElementById('mini-game-container').style.display = 'block';
+                    document.getElementById('options-container').style.display = 'grid';
+                    
+                    const rev = preg.revealedBlocks || [];
+                    currentBlocks.forEach((b, idx) => rev.includes(idx) ? b.classList.add('hidden') : b.classList.remove('hidden'));
+                }
+                else if (estado === 'revealed') {
+                    showScreen('result');
+                    const scr = screens.result;
+                    if (!respondedThisRound) {
+                        scr.style.backgroundColor = "#555";
+                        document.getElementById('res-title').innerText = "TIEMPO AGOTADO";
+                        document.getElementById('res-subtitle').innerText = "NO RESPONDISTE";
+                    } else if (lastAnswerCorrect) {
+                        scr.style.backgroundColor = "#00c853";
+                        document.getElementById('res-title').innerText = "CORRECTO";
+                        document.getElementById('res-subtitle').innerText = `+${pointsEarnedRound} PTS`;
+                    } else {
+                        scr.style.backgroundColor = "#d32f2f";
+                        document.getElementById('res-title').innerText = "INCORRECTO";
+                        document.getElementById('res-subtitle').innerText = "0 PTS";
                     }
                 }
-                
-                if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; }
-                if (estado === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; updateBlocks(preg.revealedBlocks || []); }
-                if (estado === 'revealed') { 
-                    currentBlocks.forEach(b => b.classList.add('hidden'));
-                    document.getElementById('correct-answer').innerText = `RESPUESTA: ${preg.opciones[preg.correcta]}`;
+                else if (estado === 'ranking') {
+                    showScreen('result');
+                    screens.result.style.backgroundColor = "#111";
+                    document.getElementById('res-title').innerText = "MIRA LA PANTALLA";
+                    document.getElementById('res-subtitle').innerText = "REVISA EL TOP 20";
                 }
-            }
-
-            if(estado === 'ranking') renderRanking();
-        }
-
-        function updateBlocks(revealedIndices) {
-            currentBlocks.forEach((b, i) => revealedIndices.includes(i) ? b.classList.add('hidden') : b.classList.remove('hidden'));
-        }
-
-        function renderRanking() {
-            const list = document.getElementById('ranking-list');
-            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20); // Top 20
-            
-            let yOffset = 0;
-
-            sorted.forEach((player, index) => {
-                let el = document.getElementById('rank-' + player.id);
-                if (!el) {
-                    el = document.createElement('div');
-                    el.id = 'rank-' + player.id;
-                    list.appendChild(el);
-                }
-                
-                // Reiniciar clases
-                el.className = 'ranking-item';
-                if (index === 0) el.classList.add('top1');
-                else if (index === 1) el.classList.add('top2');
-                else if (index === 2) el.classList.add('top3');
-                else if (index <= 4) el.classList.add('top5');
-
-                el.innerHTML = `<span>#${index+1} ${player.nombre}</span><span>${player.puntaje}</span>`;
-                
-                // Animar posición Y
-                el.style.transform = `translateY(${yOffset}px)`;
-                
-                // Calcular espacio para el siguiente (Top 3 son más altos)
-                if(index === 0) yOffset += 60;
-                else if(index === 1) yOffset += 55;
-                else if(index === 2) yOffset += 50;
-                else yOffset += 45;
             });
         }
     </script>
