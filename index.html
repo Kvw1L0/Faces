@@ -2,280 +2,268 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pantalla Gigante</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jugar - BTL Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; background-color: #000; }
-        
-        /* FONDO CORPORATIVO ACTUALIZADO */
-        .bg-layer { position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('fondohorizontal.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.8; }
-        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%); z-index: -1; }
-
-        /* LOBBY Y FISICAS */
-        #lobby-container { display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 10; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .blink-text { color: #fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; animation: blinker 1.5s linear infinite; text-align: center;}
-        @keyframes blinker { 50% { opacity: 0; } }
-        .pin-display { font-size: 8rem; color: #fff; background: rgba(227, 0, 15, 0.8); border: 8px solid #fff; padding: 20px 40px; box-shadow: 10px 10px 0px #000; backdrop-filter: blur(5px); }
-        .qr-box { width: 250px; height: 250px; border: 8px solid #fff; background: #fff; box-shadow: 10px 10px 0px #E3000f;}
-        .qr-box img { max-width: 100%; max-height: 100%; }
-        
-        #physics-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5; display: none; }
-        .bouncing-name { position: absolute; color: #fff; background: #E3000f; padding: 10px 20px; border: 2px solid #fff; font-size: 1.5rem; white-space: nowrap; box-shadow: 4px 4px 0 #000; }
-
-        /* JUEGO */
-        #game-wrapper { display: none; flex-direction: column; align-items: center; z-index: 10; }
-        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #E3000f; background:#000; }
-        #target-image { width: 100%; height: 100%; object-fit: contain; }
-        #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        
-        .grid-block { 
-            background-color: #E3000f; 
-            background-image: url('logo_bloque.png'); 
-            background-size: 50%; 
-            background-repeat: no-repeat;
-            background-position: center;
-            border: 2px solid #fff; 
-            transition: opacity 0.2s, transform 0.2s; 
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Press Start 2P', monospace; display: flex; 
+            flex-direction: column; align-items: center; 
+            background-color: #000; overscroll-behavior-y: none; 
+            -webkit-text-size-adjust: 100%; 
         }
-        .grid-block.hidden { opacity: 0; transform: scale(0.5); }
         
-        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #E3000f; text-align: center; }
-        #correct-answer { display: none; font-size: 4rem; color: #fff; margin-top: 30px; text-shadow: 6px 6px #E3000f; text-align: center;}
+        /* CORRECCIÓN FONDO ACTUALIZADA */
+        .bg-layer { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background-image: url('fondo.png'); background-size: cover; 
+            background-position: center; z-index: 0; opacity: 0.4; 
+            pointer-events: none; 
+        }
         
-        /* RANKING GLASSMORPHISM */
-        #ranking-container { display: none; width: 80%; max-width: 900px; text-align: center; z-index: 10; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        #ranking-list { position: relative; height: 60vh; margin-top: 30px; overflow: hidden; }
-        .ranking-item { 
-            position: absolute; left: 0; width: 100%; height: 40px; background: rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.2); 
-            display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;
-            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); color: #fff; font-size: 14px;
+        .screen { 
+            display: none; width: 100%; height: 100%; flex-direction: column; 
+            align-items: center; justify-content: center; padding: 20px; 
+            box-sizing: border-box; z-index: 10; position: relative;
         }
-        .ranking-item.top1 { background: #E3000f; color: #fff; font-size: 24px; height: 60px; border: 2px solid #fff; font-weight: bold; }
-        .ranking-item.top2 { background: rgba(227, 0, 15, 0.7); font-size: 20px; height: 50px; }
-        .ranking-item.top3 { background: rgba(227, 0, 15, 0.5); font-size: 18px; height: 45px; }
+        .active { display: flex; }
 
-        /* EFECTO CAMERA SHAKE */
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-1deg); }
-            20%, 80% { transform: translate3d(4px, 0, 0) rotate(1deg); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-2deg); }
-            40%, 60% { transform: translate3d(6px, 0, 0) rotate(2deg); }
+        #login-screen input { 
+            width: 100%; max-width: 300px; padding: 15px; font-size: 16px; 
+            text-align: center; border: 4px solid #fff; background: rgba(0,0,0,0.8); 
+            color: #fff; margin-bottom: 20px; font-family: 'Press Start 2P', monospace; 
+            text-transform: uppercase; border-radius: 0; -webkit-appearance: none;
         }
-        .shake { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        .btn-action { 
+            background: #E3000f; color: #fff; font-size: 16px; padding: 20px; 
+            border: 4px solid #fff; cursor: pointer; text-transform: uppercase; 
+            font-family: 'Press Start 2P', monospace; width: 100%; max-width: 300px; 
+            transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-action:active { transform: scale(0.95); background: #fff; color: #E3000f;}
 
-        /* PARTICULAS */
-        #particles { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; display: none; overflow: hidden; }
-        .particle { position: absolute; width: 10px; height: 10px; background: #fff; animation: fall linear infinite; }
-        .particle.red { background: #E3000f; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+        #mini-game-container { 
+            position: relative; width: 100%; max-width: 250px; aspect-ratio: 1/1; 
+            border: 4px solid #fff; margin-bottom: 20px; background: #000; 
+            box-shadow: 0 0 20px rgba(227,0,15,0.5);
+        }
+        
+        #mini-target-image { width: 100%; height: 100%; object-fit: contain; }
+        #mini-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        
+        .grid-block { background-color: #E3000f; border: 1px solid #fff; transition: opacity 0.2s; }
+        .grid-block.hidden { opacity: 0; }
+
+        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
+        
+        .btn-option { 
+            background: rgba(0,0,0,0.8); color: #fff; padding: 20px 10px; 
+            font-size: 12px; border: 4px solid #fff; cursor: pointer; 
+            word-wrap: break-word; font-family: 'Press Start 2P', monospace; 
+            transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-option.selected { 
+            background: #fff; color: #E3000f; border-color: #E3000f; transform: scale(1.05); 
+        }
+
+        #result-screen { text-align: center; }
+        #res-title { font-size: 24px; text-shadow: 2px 2px #000; line-height: 1.5; color: #fff;}
+        #res-subtitle { font-size: 16px; margin-top: 20px; color: #fff;}
+
+        #score-display { 
+            position: absolute; top: 15px; right: 15px; font-size: 12px; 
+            color: #fff; background: #E3000f; padding: 10px; border: 2px solid #fff; z-index: 100;
+        }
     </style>
 </head>
 <body>
-    <audio id="audioBlip" src="sfx_blip.mp3" preload="auto"></audio>
-    <audio id="audioReveal" src="sfx_reveal.mp3" preload="auto"></audio>
-    <audio id="audioRanking" src="sfx_ranking.mp3" preload="auto"></audio>
-
     <div class="bg-layer"></div>
-    <div class="overlay"></div>
-    <div id="particles"></div>
-    <div id="physics-container"></div>
+    <div id="score-display" style="display:none;">0 PTS</div>
 
-    <div id="lobby-container">
-        <div class="blink-text">SALA DE JUEGO</div>
-        <div class="pin-display" id="lobby-pin">----</div>
-        <div class="qr-box" id="lobby-center-box"><img src="qr_estatico.png" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#fff\'/></svg>'"></div>
+    <!-- LOGIN -->
+    <div id="login-screen" class="screen active">
+        <input type="text" id="pinInput" placeholder="PIN SALA" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+        <input type="text" id="nickname" placeholder="NICKNAME" maxlength="12">
+        <button class="btn-action" id="btnJoin">ENTRAR</button>
     </div>
 
-    <div id="game-wrapper">
-        <div class="info-text" id="statusText">PREPARADOS...</div>
-        <div id="game-container"><img id="target-image" src="" alt=""><div id="grid-overlay"></div></div>
-        <div id="correct-answer"></div>
+    <!-- JUEGO -->
+    <div id="game-screen" class="screen">
+        <div id="game-status-text" style="color:#fff; font-size: 12px; margin-bottom: 15px; text-align: center; line-height: 1.5; background: #E3000f; padding: 10px; border: 2px solid #fff; opacity:0;">...</div>
+        <div id="mini-game-container" style="display:none;">
+            <img id="mini-target-image" src="" alt="">
+            <div id="mini-grid"></div>
+        </div>
+        <div class="options-container" id="options-container" style="display:none;">
+            <button class="btn-option" id="btnOpt0">OPT 1</button>
+            <button class="btn-option" id="btnOpt1">OPT 2</button>
+            <button class="btn-option" id="btnOpt2">OPT 3</button>
+            <button class="btn-option" id="btnOpt3">OPT 4</button>
+        </div>
     </div>
 
-    <div id="ranking-container">
-        <h1 style="color:#fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; margin: 0;">RANKING</h1>
-        <div id="ranking-list"></div>
+    <!-- RESULTADO -->
+    <div id="result-screen" class="screen">
+        <h1 id="res-title">...</h1>
+        <p id="res-subtitle">...</p>
     </div>
 
     <script type="module">
+        // @ts-ignore
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getDatabase, ref, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+        // @ts-ignore
+        import { getDatabase, ref, onValue, set, get, child, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
-        const db = getDatabase(initializeApp(firebaseConfig));
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", 
+            authDomain: "celebrity-baby-35179.firebaseapp.com", 
+            databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", 
+            projectId: "celebrity-baby-35179" 
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentRoom = sessionStorage.getItem('btl_room'); 
+        let playerId = sessionStorage.getItem('btl_id'); 
+        let playerName = sessionStorage.getItem('btl_name');
+        let currentScore = 0; 
         
-        let globalPlayers = {}; let knownPlayers = new Set();
-        let lastState = ''; let lastRevealedCount = 0;
+        let localSelectedOption = -1; 
+        let localSelectedTimestamp = 0;
+        let pointsEarnedRound = 0;
+        let questionProcessed = false;
         
-        const sfxBlip = document.getElementById('audioBlip');
-        const sfxReveal = document.getElementById('audioReveal');
-        const sfxRanking = document.getElementById('audioRanking');
+        let canAnswer = false; 
 
-        function playSound(audioEl) {
-            audioEl.currentTime = 0;
-            audioEl.play().catch(e => console.log("Audio bloqueado por navegador", e));
+        const screens = { login: document.getElementById('login-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
+        function showScreen(name) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[name].classList.add('active'); }
+
+        if (playerId && currentRoom) { 
+            document.getElementById('score-display').style.display = 'block'; listenToGame(); listenToMyScore(); 
         }
 
-        const pContainer = document.getElementById('particles');
-        for(let i=0; i<30; i++) {
-            let p = document.createElement('div'); p.className = i%2===0 ? 'particle red' : 'particle';
-            p.style.left = Math.random() * 100 + 'vw'; p.style.animationDuration = (Math.random() * 3 + 2) + 's'; p.style.animationDelay = Math.random() * 2 + 's';
-            pContainer.appendChild(p);
-        }
-
-        const physContainer = document.getElementById('physics-container');
-        let bouncingEntities = [];
-        let physicsRunning = false;
-
-        function startPhysics() {
-            if(physicsRunning) return; physicsRunning = true;
-            requestAnimationFrame(updatePhysics);
-        }
-
-        function updatePhysics() {
-            if(!physicsRunning) return;
-            const w = window.innerWidth; const h = window.innerHeight;
-            const lobbyBox = document.getElementById('lobby-container').getBoundingClientRect();
-            const cLeft = lobbyBox.left - 20; const cRight = lobbyBox.right + 20;
-            const cTop = lobbyBox.top - 20; const cBottom = lobbyBox.bottom + 20;
-
-            bouncingEntities.forEach(entity => {
-                entity.x += entity.vx; entity.y += entity.vy;
-                if(entity.x <= 0 || entity.x + entity.width >= w) entity.vx *= -1;
-                if(entity.y <= 0 || entity.y + entity.height >= h) entity.vy *= -1;
-
-                const right = entity.x + entity.width; const bottom = entity.y + entity.height;
-                if (right > cLeft && entity.x < cRight && bottom > cTop && entity.y < cBottom) {
-                    const fromLeft = Math.abs(right - cLeft); const fromRight = Math.abs(entity.x - cRight);
-                    const fromTop = Math.abs(bottom - cTop); const fromBottom = Math.abs(entity.y - cBottom);
-                    const min = Math.min(fromLeft, fromRight, fromTop, fromBottom);
-                    if(min === fromLeft || min === fromRight) entity.vx *= -1; else entity.vy *= -1;
-                }
-                entity.el.style.transform = `translate(${entity.x}px, ${entity.y}px)`;
-            });
-            requestAnimationFrame(updatePhysics);
-        }
-
-        function addBouncingName(name) {
-            const el = document.createElement('div');
-            el.className = 'bouncing-name'; el.innerText = name;
-            physContainer.appendChild(el);
-            const rect = el.getBoundingClientRect();
-            bouncingEntities.push({
-                el: el, width: rect.width, height: rect.height,
-                x: Math.random() * (window.innerWidth - rect.width),
-                y: -50,
-                vx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2),
-                vy: 2 + Math.random() * 2
-            });
-        }
-
-        onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
-            const pin = snap.val();
-            if(pin) {
-                document.getElementById('lobby-pin').innerText = pin;
-                
-                onChildAdded(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (childSnap) => {
-                    const p = childSnap.val();
-                    if(!knownPlayers.has(childSnap.key)) {
-                        knownPlayers.add(childSnap.key);
-                        if(document.getElementById('lobby-container').style.display === 'flex') {
-                            addBouncingName(p.nombre);
-                        }
-                    }
-                });
-
-                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (snap) => {
-                    globalPlayers = snap.val() || {};
-                    if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
-                });
-
-                onValue(ref(db, `activacion_arcade/salas/${pin}/estado`), (snap) => {
-                    const estado = snap.val();
-                    if(!estado) return;
-                    handleStateSwitch(estado);
-                });
-
-                onValue(ref(db, `activacion_arcade/salas/${pin}/pregunta_actual`), (snap) => {
-                    const preg = snap.val();
-                    if(!preg) return;
-                    updateGrid(preg);
-                });
-
-            } else { location.reload(); }
-        });
-
-        function handleStateSwitch(estado) {
-            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
-            physContainer.style.display = estado === 'lobby' ? 'block' : 'none';
-            document.getElementById('game-wrapper').style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'flex' : 'none';
-            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
-            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
-            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
-            pContainer.style.display = estado === 'ranking' ? 'block' : 'none';
-
-            if(estado === 'lobby') {
-                startPhysics();
-            } else {
-                physicsRunning = false; bouncingEntities = []; physContainer.innerHTML = ''; knownPlayers.clear(); 
-            }
-
-            if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; lastRevealedCount = 0; }
-            if (estado === 'playing') document.getElementById('statusText').innerText = "¡ADIVINA!";
+        document.getElementById('btnJoin').onclick = () => {
+            const pin = document.getElementById('pinInput').value.trim(); const nick = document.getElementById('nickname').value.trim().toUpperCase();
+            if (pin.length < 4 || nick.length < 2) { alert("DATOS INVÁLIDOS"); return; }
             
-            if (estado === 'revealed' && lastState !== 'revealed') { 
-                triggerShake(); playSound(sfxReveal);
-                currentBlocks.forEach(b => b.classList.add('hidden')); 
-            }
-            if (estado === 'ranking' && lastState !== 'ranking') { 
-                triggerShake(); playSound(sfxRanking); renderRanking(); 
-            }
-            lastState = estado;
-        }
+            get(child(ref(db), `activacion_arcade/salas/${pin}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    playerId = 'p_' + Math.random().toString(36).substr(2, 6); 
+                    playerName = nick; currentRoom = pin;
+                    sessionStorage.setItem('btl_room', pin); sessionStorage.setItem('btl_id', playerId); sessionStorage.setItem('btl_name', playerName);
+                    set(ref(db, `activacion_arcade/salas/${pin}/jugadores/${playerId}`), { nombre: playerName, puntaje: 0 });
+                    document.getElementById('score-display').style.display = 'block'; listenToGame(); listenToMyScore();
+                } else { alert("SALA NO ENCONTRADA"); }
+            });
+        };
 
-        function triggerShake() {
-            document.body.classList.remove('shake');
-            void document.body.offsetWidth;
-            document.body.classList.add('shake');
+        function listenToMyScore() {
+            onValue(ref(db, `activacion_arcade/salas/${currentRoom}/jugadores/${playerId}/puntaje`), (snap) => {
+                currentScore = snap.val() || 0; document.getElementById('score-display').innerText = `${currentScore} PTS`;
+            });
         }
 
         let currentBlocks = [];
-        function updateGrid(preg) {
-            if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
-                document.getElementById('target-image').src = preg.image;
-                const grid = document.getElementById('grid-overlay');
-                grid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`; grid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
-                grid.innerHTML = ''; currentBlocks = [];
-                for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
-                    let b = document.createElement('div'); b.className = 'grid-block'; grid.appendChild(b); currentBlocks.push(b);
+        
+        function listenToGame() {
+            onValue(ref(db, `activacion_arcade/salas/${currentRoom}`), (snapshot) => {
+                const data = snapshot.val(); 
+                if (!data) { sessionStorage.clear(); location.reload(); return; }
+                
+                const e = data.estado; 
+                const preg = data.pregunta_actual;
+
+                if (e === 'lobby' || e === 'idle') {
+                    showScreen('game'); 
+                    document.getElementById('game-status-text').style.opacity = e === 'lobby' ? '1' : '0';
+                    document.getElementById('game-status-text').innerText = "ESPERANDO...";
+                    
+                    document.getElementById('mini-game-container').style.display = 'none'; 
+                    document.getElementById('options-container').style.display = 'none';
+                    
+                    localSelectedOption = -1; 
+                    questionProcessed = false;
+                    canAnswer = true; 
+                    
+                    if (preg && e === 'idle') {
+                        if (document.getElementById('mini-target-image').src !== preg.image) {
+                            document.getElementById('mini-target-image').src = preg.image;
+                            const grid = document.getElementById('mini-grid');
+                            grid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`; grid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                            grid.innerHTML = ''; currentBlocks = [];
+                            for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                                const b = document.createElement('div'); b.className = 'grid-block'; grid.appendChild(b); currentBlocks.push(b);
+                            }
+                        }
+                        
+                        for (let i = 0; i < 4; i++) {
+                            const btn = document.getElementById(`btnOpt${i}`); btn.innerText = preg.opciones[i]; btn.classList.remove('selected');
+                            
+                            btn.onclick = () => {
+                                if(!canAnswer) return; 
+
+                                localSelectedOption = i;
+                                localSelectedTimestamp = Date.now(); 
+                                
+                                for (let j = 0; j < 4; j++) { document.getElementById(`btnOpt${j}`).classList.remove('selected'); }
+                                btn.classList.add('selected');
+                                
+                                document.body.style.backgroundColor = "#fff"; setTimeout(() => document.body.style.backgroundColor = "#000", 50);
+                                if (navigator.vibrate) navigator.vibrate(50); 
+                            };
+                        }
+                    }
+                } 
+                else if (e === 'playing') {
+                    showScreen('game');
+                    document.getElementById('game-status-text').style.opacity = '0';
+                    document.getElementById('mini-game-container').style.display = 'block'; 
+                    document.getElementById('options-container').style.display = 'grid';
+                    
+                    const revealed = preg.revealedBlocks || [];
+                    revealed.forEach(idx => { if (currentBlocks[idx]) currentBlocks[idx].classList.add('hidden'); });
                 }
-                lastRevealedCount = 0;
-            }
-            
-            const rev = preg.revealedBlocks || [];
-            if(rev.length > lastRevealedCount && lastState === 'playing') {
-                playSound(sfxBlip);
-                lastRevealedCount = rev.length;
-            }
-            rev.forEach(i => currentBlocks[i].classList.add('hidden'));
+                else if (e === 'revealed') {
+                    canAnswer = false; 
 
-            document.getElementById('correct-answer').innerText = preg.opciones[preg.correcta];
-        }
-
-        function renderRanking() {
-            const list = document.getElementById('ranking-list');
-            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20);
-            let y = 0;
-            sorted.forEach((player, i) => {
-                let el = document.getElementById('r-' + player.id);
-                if (!el) { el = document.createElement('div'); el.id = 'r-' + player.id; list.appendChild(el); }
-                el.className = 'ranking-item';
-                if (i === 0) el.classList.add('top1'); else if (i === 1) el.classList.add('top2'); else if (i === 2) el.classList.add('top3');
-                el.innerHTML = `<span>#${i+1} ${player.nombre}</span><span>${player.puntaje} PTS</span>`;
-                el.style.transform = `translateY(${y}px)`;
-                y += i === 0 ? 70 : (i === 1 ? 60 : (i === 2 ? 55 : 50));
+                    showScreen('result'); const scr = screens.result;
+                    
+                    if (!questionProcessed) {
+                        questionProcessed = true;
+                        
+                        if (localSelectedOption === -1) {
+                            scr.style.backgroundColor = "#333";
+                            document.getElementById('res-title').innerText = "TIEMPO AGOTADO"; document.getElementById('res-subtitle').innerText = "NO RESPONDISTE";
+                            if (navigator.vibrate) navigator.vibrate([200]);
+                        } else if (localSelectedOption === preg.correcta) {
+                            scr.style.backgroundColor = "#00c853"; 
+                            
+                            const timeTaken = localSelectedTimestamp - preg.startTime;
+                            const maxTime = preg.totalTimeSecs * 1000;
+                            let score = Math.floor(1000 * (1 - (timeTaken / maxTime)));
+                            if (score < 100) score = 100; if (timeTaken > maxTime || timeTaken < 0) score = 0;
+                            pointsEarnedRound = parseInt(score) || 0; 
+                            
+                            document.getElementById('res-title').innerText = "CORRECTO"; document.getElementById('res-subtitle').innerText = `+${pointsEarnedRound} PTS`;
+                            update(ref(db, `activacion_arcade/salas/${currentRoom}/jugadores/${playerId}`), { puntaje: currentScore + pointsEarnedRound });
+                            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+                        } else {
+                            scr.style.backgroundColor = "#E3000f"; 
+                            document.getElementById('res-title').innerText = "INCORRECTO"; document.getElementById('res-subtitle').innerText = "0 PTS";
+                            if (navigator.vibrate) navigator.vibrate([300]);
+                        }
+                    }
+                }
+                else if (e === 'ranking') {
+                    canAnswer = false;
+                    showScreen('result'); screens.result.style.backgroundColor = "transparent";
+                    document.getElementById('res-title').innerText = "MIRA LA PANTALLA"; document.getElementById('res-subtitle').innerText = "TOP 20";
+                }
             });
         }
     </script>
