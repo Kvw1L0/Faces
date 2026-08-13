@@ -22,7 +22,250 @@
         <img id="target-image" src="" alt="">
         <div id="grid-overlay"></div>
     </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jugar</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #111; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Pantallas */
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; }
 
+        /* Login */
+        #login-screen input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; border-radius: 8px; border: 2px solid #ffc107; background: #222; color: white; margin-bottom: 20px; }
+        .btn-massive { background: #ffc107; color: black; font-size: 1.5rem; font-weight: bold; padding: 15px 40px; border: none; border-radius: 8px; cursor: pointer; width: 80%; }
+        .btn-massive:active { transform: scale(0.95); }
+
+        /* Juego */
+        #mini-game-container { position: relative; width: 80vw; height: 80vw; max-width: 300px; max-height: 300px; border: 2px solid #ffc107; margin-bottom: 20px; }
+        #mini-target-image { width: 100%; height: 100%; object-fit: contain; }
+        #mini-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        .grid-block { background-color: #ffc107; border: 1px solid rgba(0,0,0,0.5); transition: opacity 0.2s; }
+        .grid-block.hidden { opacity: 0; }
+
+        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
+        .btn-option { background: #333; color: white; padding: 20px 10px; font-size: 1.2rem; font-weight: bold; border: 2px solid #555; border-radius: 10px; cursor: pointer; transition: 0.2s; word-wrap: break-word; }
+        .btn-option.selected { background: #ffc107; color: black; border-color: white; }
+        .btn-option:disabled { opacity: 0.5; }
+
+        /* Resultado */
+        #result-screen h1 { font-size: 3rem; margin: 0; }
+        #result-screen p { font-size: 1.5rem; }
+
+        #score-display { position: absolute; top: 10px; right: 10px; background: rgba(255,193,7,0.2); padding: 5px 10px; border-radius: 5px; color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="score-display">0 pts</div>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="login-screen" class="screen active">
+        <h1 style="color:#ffc107; margin-bottom: 10px;">Únete al Juego</h1>
+        <p style="color:#aaa; text-align:center; margin-bottom: 30px;">Ingresa tu Nickname para participar</p>
+        <input type="text" id="nickname" placeholder="Tu Apodo" maxlength="15">
+        <button class="btn-massive" id="btnJoin">Entrar</button>
+    </div>
+
+    <!-- PANTALLA JUEGO -->
+    <div id="game-screen" class="screen">
+        <h3 id="game-status-text" style="color:#ffc107;">Mira la pantalla principal...</h3>
+        
+        <div id="mini-game-container" style="display:none;">
+            <img id="mini-target-image" src="" alt="">
+            <div id="mini-grid"></div>
+        </div>
+
+        <div class="options-container" id="options-container" style="display:none;">
+            <button class="btn-option" id="btnOpt0">Opción 1</button>
+            <button class="btn-option" id="btnOpt1">Opción 2</button>
+            <button class="btn-option" id="btnOpt2">Opción 3</button>
+            <button class="btn-option" id="btnOpt3">Opción 4</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA RESULTADO -->
+    <div id="result-screen" class="screen">
+        <h1 id="res-title">...</h1>
+        <p id="res-subtitle">...</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179", storageBucket: "celebrity-baby-35179.firebasestorage.app", messagingSenderId: "830846373781", appId: "1:830846373781:web:eaa35b292754152d07b09c" };
+        const db = getDatabase(initializeApp(firebaseConfig));
+
+        let playerId = sessionStorage.getItem('jugador_id');
+        let playerName = sessionStorage.getItem('jugador_nombre');
+        let currentScore = 0;
+        let respondedThisRound = false;
+        let lastAnswerCorrect = false;
+        let pointsEarnedRound = 0;
+
+        const screens = {
+            login: document.getElementById('login-screen'),
+            game: document.getElementById('game-screen'),
+            result: document.getElementById('result-screen')
+        };
+
+        function showScreen(name) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[name].classList.add('active');
+        }
+
+        // Reconexión automática
+        if (playerId) {
+            showScreen('game');
+            listenToGame();
+            listenToMyScore();
+        }
+
+        document.getElementById('btnJoin').onclick = () => {
+            const nick = document.getElementById('nickname').value.trim();
+            if(nick.length < 2) { alert("Ingresa un nombre válido"); return; }
+            
+            playerId = 'user_' + Math.random().toString(36).substr(2, 9);
+            playerName = nick;
+            sessionStorage.setItem('jugador_id', playerId);
+            sessionStorage.setItem('jugador_nombre', playerName);
+            
+            // Registrar en base de datos
+            set(ref(db, `activacion_adivina_personaje/jugadores/${playerId}`), { nombre: playerName, puntaje: 0 });
+            
+            showScreen('game');
+            listenToGame();
+            listenToMyScore();
+        };
+
+        function listenToMyScore() {
+            onValue(ref(db, `activacion_adivina_personaje/jugadores/${playerId}/puntaje`), (snap) => {
+                currentScore = snap.val() || 0;
+                document.getElementById('score-display').innerText = `${currentScore} pts`;
+            });
+        }
+
+        let currentBlocks = [];
+        const miniGrid = document.getElementById('mini-grid');
+        const miniImg = document.getElementById('mini-target-image');
+
+        function listenToGame() {
+            onValue(ref(db, 'activacion_adivina_personaje'), (snapshot) => {
+                const data = snapshot.val();
+                if (!data || !data.pregunta_actual) return;
+
+                const estado = data.estado;
+                const preg = data.pregunta_actual;
+
+                if (estado === 'idle') {
+                    showScreen('game');
+                    document.getElementById('game-status-text').innerText = "Prepárate...";
+                    document.getElementById('mini-game-container').style.display = 'none';
+                    document.getElementById('options-container').style.display = 'none';
+                    respondedThisRound = false;
+                    
+                    // Preparar UI mini grilla
+                    if (miniImg.src !== preg.image) {
+                        miniImg.src = preg.image;
+                        miniGrid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
+                        miniGrid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                        miniGrid.innerHTML = '';
+                        currentBlocks = [];
+                        for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                            const block = document.createElement('div');
+                            block.classList.add('grid-block');
+                            miniGrid.appendChild(block);
+                            currentBlocks.push(block);
+                        }
+                    }
+                    
+                    // Llenar botones
+                    for(let i=0; i<4; i++) {
+                        const btn = document.getElementById(`btnOpt${i}`);
+                        btn.innerText = preg.opciones[i];
+                        btn.disabled = false;
+                        btn.classList.remove('selected');
+                        
+                        // Lógica de respuesta
+                        btn.onclick = () => {
+                            if(respondedThisRound) return;
+                            respondedThisRound = true;
+                            if(navigator.vibrate) navigator.vibrate(50);
+                            
+                            // Desactivar visualmente los demás
+                            for(let j=0; j<4; j++) document.getElementById(`btnOpt${j}`).disabled = true;
+                            btn.classList.add('selected');
+                            document.getElementById('game-status-text').innerText = "Respuesta enviada...";
+
+                            // Calcular puntaje
+                            const timeTaken = Date.now() - preg.startTime;
+                            const maxTime = preg.totalTimeSecs * 1000;
+                            
+                            if (i === preg.correcta) {
+                                lastAnswerCorrect = true;
+                                // Fórmula: Rápido = más puntos. Máx 1000.
+                                let scoreRound = Math.floor(1000 * (1 - (timeTaken / maxTime)));
+                                if (scoreRound < 100) scoreRound = 100; // Mínimo 100 pts si acierta
+                                if (timeTaken > maxTime) scoreRound = 0; // Fuera de tiempo
+                                pointsEarnedRound = scoreRound;
+                                
+                                // Sumar a DB
+                                update(ref(db, `activacion_adivina_personaje/jugadores/${playerId}`), {
+                                    puntaje: currentScore + scoreRound
+                                });
+                            } else {
+                                lastAnswerCorrect = false;
+                                pointsEarnedRound = 0;
+                            }
+                        };
+                    }
+                } 
+                else if (estado === 'playing') {
+                    showScreen('game');
+                    document.getElementById('game-status-text').innerText = respondedThisRound ? "Respuesta enviada..." : "¿Quién es?";
+                    document.getElementById('mini-game-container').style.display = 'block';
+                    document.getElementById('options-container').style.display = 'grid';
+                    
+                    // Sincronizar grilla visualmente
+                    const revealed = preg.revealedBlocks || [];
+                    currentBlocks.forEach((block, idx) => {
+                        if (revealed.includes(idx)) block.classList.add('hidden');
+                        else block.classList.remove('hidden');
+                    });
+                }
+                else if (estado === 'revealed') {
+                    showScreen('result');
+                    const scr = screens.result;
+                    if (!respondedThisRound) {
+                        scr.style.backgroundColor = "#555";
+                        document.getElementById('res-title').innerText = "¡Tiempo agotado!";
+                        document.getElementById('res-subtitle').innerText = "No respondiste.";
+                    } else if (lastAnswerCorrect) {
+                        scr.style.backgroundColor = "#28a745"; // Verde
+                        document.getElementById('res-title').innerText = "¡CORRECTO!";
+                        document.getElementById('res-subtitle').innerText = `+${pointsEarnedRound} Puntos`;
+                    } else {
+                        scr.style.backgroundColor = "#dc3545"; // Rojo
+                        document.getElementById('res-title').innerText = "¡INCORRECTO!";
+                        document.getElementById('res-subtitle').innerText = "0 Puntos";
+                    }
+                }
+                else if (estado === 'ranking') {
+                    showScreen('result');
+                    screens.result.style.backgroundColor = "#111";
+                    document.getElementById('res-title').innerText = "¡Mira la pantalla!";
+                    document.getElementById('res-subtitle').innerText = "Revisa si estás en el Top 5";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
     <!-- Script tipo módulo para Firebase V9+ -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
