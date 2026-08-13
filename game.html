@@ -13,27 +13,38 @@
         .bg-layer { position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('fondo.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.8; }
         .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%); z-index: -1; }
 
-        /* LOBBY Y NOMBRES FLOTANTES */
-        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 10; width: 100%; height: 100%; justify-content: center;}
-        .blink-text { color: #fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; animation: blinker 1.5s linear infinite; }
+        /* LOBBY Y FISICAS */
+        #lobby-container { display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 10; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .blink-text { color: #fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; animation: blinker 1.5s linear infinite; text-align: center;}
         @keyframes blinker { 50% { opacity: 0; } }
         .pin-display { font-size: 8rem; color: #fff; background: rgba(227, 0, 15, 0.8); border: 8px solid #fff; padding: 20px 40px; box-shadow: 10px 10px 0px #000; backdrop-filter: blur(5px); }
         .qr-box { width: 250px; height: 250px; border: 8px solid #fff; background: #fff; box-shadow: 10px 10px 0px #E3000f;}
         .qr-box img { max-width: 100%; max-height: 100%; }
         
-        /* Animación de nombres entrando */
-        .floating-name { position: absolute; bottom: -50px; color: #fff; background: #E3000f; padding: 10px 20px; border: 2px solid #fff; font-size: 1.5rem; animation: floatUp 4s ease-out forwards; white-space: nowrap; }
-        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { opacity: 1; transform: translateY(-20vh) scale(1.2); } 100% { transform: translateY(-100vh) scale(1); opacity: 0; } }
+        /* Contenedor de nombres rebotando */
+        #physics-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5; display: none; }
+        .bouncing-name { position: absolute; color: #fff; background: #E3000f; padding: 10px 20px; border: 2px solid #fff; font-size: 1.5rem; white-space: nowrap; box-shadow: 4px 4px 0 #000; }
 
         /* JUEGO */
-        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #E3000f; display: none; z-index: 5; background:#000;}
+        #game-wrapper { display: none; flex-direction: column; align-items: center; z-index: 10; }
+        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #E3000f; background:#000; }
         #target-image { width: 100%; height: 100%; object-fit: contain; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #E3000f; border: 2px solid #fff; transition: opacity 0.2s; }
-        .grid-block.hidden { opacity: 0; }
         
-        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #E3000f; text-align: center; display: none; z-index: 5;}
-        #correct-answer { display: none; font-size: 4rem; color: #fff; margin-top: 30px; text-shadow: 6px 6px #E3000f; z-index: 5; text-align: center;}
+        /* LOGO EN LOS BLOQUES ROJOS */
+        .grid-block { 
+            background-color: #E3000f; 
+            background-image: url('logo_bloque.png'); 
+            background-size: 50%; /* Ajusta tamaño del logo interior */
+            background-repeat: no-repeat;
+            background-position: center;
+            border: 2px solid #fff; 
+            transition: opacity 0.2s, transform 0.2s; 
+        }
+        .grid-block.hidden { opacity: 0; transform: scale(0.5); }
+        
+        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #E3000f; text-align: center; }
+        #correct-answer { display: none; font-size: 4rem; color: #fff; margin-top: 30px; text-shadow: 6px 6px #E3000f; text-align: center;}
         
         /* RANKING GLASSMORPHISM */
         #ranking-container { display: none; width: 80%; max-width: 900px; text-align: center; z-index: 10; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -47,6 +58,15 @@
         .ranking-item.top2 { background: rgba(227, 0, 15, 0.7); font-size: 20px; height: 50px; }
         .ranking-item.top3 { background: rgba(227, 0, 15, 0.5); font-size: 18px; height: 45px; }
 
+        /* EFECTO CAMERA SHAKE */
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-1deg); }
+            20%, 80% { transform: translate3d(4px, 0, 0) rotate(1deg); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-2deg); }
+            40%, 60% { transform: translate3d(6px, 0, 0) rotate(2deg); }
+        }
+        .shake { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both; }
+
         /* PARTICULAS */
         #particles { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; display: none; overflow: hidden; }
         .particle { position: absolute; width: 10px; height: 10px; background: #fff; animation: fall linear infinite; }
@@ -55,22 +75,31 @@
     </style>
 </head>
 <body>
+    <!-- AUDIOS (Se cargarán en memoria) -->
+    <audio id="audioBlip" src="sfx_blip.mp3" preload="auto"></audio>
+    <audio id="audioReveal" src="sfx_reveal.mp3" preload="auto"></audio>
+    <audio id="audioRanking" src="sfx_ranking.mp3" preload="auto"></audio>
+
     <div class="bg-layer"></div>
     <div class="overlay"></div>
-    
     <div id="particles"></div>
+
+    <!-- MOTOR DE FISICAS (Nombres) -->
+    <div id="physics-container"></div>
 
     <!-- LOBBY -->
     <div id="lobby-container">
         <div class="blink-text">ÚNETE A LA SALA</div>
         <div class="pin-display" id="lobby-pin">----</div>
-        <div class="qr-box"><img src="qr_estatico.png" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#fff\'/></svg>'"></div>
+        <div class="qr-box" id="lobby-center-box"><img src="qr_estatico.png" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#fff\'/></svg>'"></div>
     </div>
 
     <!-- JUEGO -->
-    <div class="info-text" id="statusText">PREPARADOS...</div>
-    <div id="game-container"><img id="target-image" src="" alt=""><div id="grid-overlay"></div></div>
-    <div id="correct-answer"></div>
+    <div id="game-wrapper">
+        <div class="info-text" id="statusText">PREPARADOS...</div>
+        <div id="game-container"><img id="target-image" src="" alt=""><div id="grid-overlay"></div></div>
+        <div id="correct-answer"></div>
+    </div>
 
     <!-- RANKING -->
     <div id="ranking-container">
@@ -85,7 +114,18 @@
         const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
         const db = getDatabase(initializeApp(firebaseConfig));
         
-        let activeRoomRef = null; let globalPlayers = {}; let knownPlayers = new Set();
+        let globalPlayers = {}; let knownPlayers = new Set();
+        let lastState = ''; let lastRevealedCount = 0;
+        
+        // Elementos de Audio
+        const sfxBlip = document.getElementById('audioBlip');
+        const sfxReveal = document.getElementById('audioReveal');
+        const sfxRanking = document.getElementById('audioRanking');
+
+        function playSound(audioEl) {
+            audioEl.currentTime = 0;
+            audioEl.play().catch(e => console.log("Audio bloqueado por navegador hasta interacción", e));
+        }
 
         // Particulas setup
         const pContainer = document.getElementById('particles');
@@ -95,66 +135,168 @@
             pContainer.appendChild(p);
         }
 
+        // --- MOTOR FISICO DE NOMBRES ---
+        const physContainer = document.getElementById('physics-container');
+        let bouncingEntities = [];
+        let physicsRunning = false;
+
+        function startPhysics() {
+            if(physicsRunning) return; physicsRunning = true;
+            requestAnimationFrame(updatePhysics);
+        }
+
+        function updatePhysics() {
+            if(!physicsRunning) return;
+            const w = window.innerWidth; const h = window.innerHeight;
+            
+            // Obtener caja de colision central (QR + PIN)
+            const lobbyBox = document.getElementById('lobby-container').getBoundingClientRect();
+            // Ampliar un poco el margen de rebote
+            const cLeft = lobbyBox.left - 20; const cRight = lobbyBox.right + 20;
+            const cTop = lobbyBox.top - 20; const cBottom = lobbyBox.bottom + 20;
+
+            bouncingEntities.forEach(entity => {
+                entity.x += entity.vx; entity.y += entity.vy;
+                
+                // Colision bordes pantalla
+                if(entity.x <= 0 || entity.x + entity.width >= w) entity.vx *= -1;
+                if(entity.y <= 0 || entity.y + entity.height >= h) entity.vy *= -1;
+
+                // Colision central (Caja negra)
+                const right = entity.x + entity.width; const bottom = entity.y + entity.height;
+                if (right > cLeft && entity.x < cRight && bottom > cTop && entity.y < cBottom) {
+                    // Determinar lado de impacto
+                    const fromLeft = Math.abs(right - cLeft); const fromRight = Math.abs(entity.x - cRight);
+                    const fromTop = Math.abs(bottom - cTop); const fromBottom = Math.abs(entity.y - cBottom);
+                    const min = Math.min(fromLeft, fromRight, fromTop, fromBottom);
+                    
+                    if(min === fromLeft || min === fromRight) entity.vx *= -1;
+                    else entity.vy *= -1;
+                }
+
+                entity.el.style.transform = `translate(${entity.x}px, ${entity.y}px)`;
+            });
+            requestAnimationFrame(updatePhysics);
+        }
+
+        function addBouncingName(name) {
+            const el = document.createElement('div');
+            el.className = 'bouncing-name'; el.innerText = name;
+            physContainer.appendChild(el);
+            const rect = el.getBoundingClientRect();
+            bouncingEntities.push({
+                el: el, width: rect.width, height: rect.height,
+                x: Math.random() * (window.innerWidth - rect.width),
+                y: -50, // Cae desde arriba
+                vx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2),
+                vy: 2 + Math.random() * 2
+            });
+        }
+        // -------------------------------
+
         onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
             const pin = snap.val();
             if(pin) {
                 document.getElementById('lobby-pin').innerText = pin;
-                if(activeRoomRef) return; 
-                activeRoomRef = ref(db, `activacion_arcade/salas/${pin}`);
                 
-                // Animación de nombres nuevos en lobby
+                // 1. Escuchar Nuevos Jugadores (Solo para animar)
                 onChildAdded(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (childSnap) => {
                     const p = childSnap.val();
                     if(!knownPlayers.has(childSnap.key)) {
                         knownPlayers.add(childSnap.key);
                         if(document.getElementById('lobby-container').style.display === 'flex') {
-                            const nameDiv = document.createElement('div'); nameDiv.className = 'floating-name'; nameDiv.innerText = p.nombre;
-                            nameDiv.style.left = (20 + Math.random() * 60) + 'vw';
-                            document.body.appendChild(nameDiv);
-                            setTimeout(() => nameDiv.remove(), 4000);
+                            addBouncingName(p.nombre);
                         }
                     }
                 });
 
+                // 2. Escuchar puntajes (Ranking)
                 onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (snap) => {
                     globalPlayers = snap.val() || {};
                     if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
                 });
 
-                onValue(activeRoomRef, (snap) => { if(snap.val()) handleGameState(snap.val()); });
+                // 3. Escuchar ESTADO GLOBAL (Evita loop de grilla)
+                onValue(ref(db, `activacion_arcade/salas/${pin}/estado`), (snap) => {
+                    const estado = snap.val();
+                    if(!estado) return;
+                    handleStateSwitch(estado);
+                });
+
+                // 4. Escuchar PREGUNTA (La grilla)
+                onValue(ref(db, `activacion_arcade/salas/${pin}/pregunta_actual`), (snap) => {
+                    const preg = snap.val();
+                    if(!preg) return;
+                    updateGrid(preg);
+                });
+
             } else { location.reload(); }
         });
 
-        let currentBlocks = [];
-        function handleGameState(data) {
-            const e = data.estado;
-            document.getElementById('lobby-container').style.display = e === 'lobby' ? 'flex' : 'none';
-            document.getElementById('game-container').style.display = (e === 'idle' || e === 'playing' || e === 'revealed') ? 'block' : 'none';
-            document.getElementById('correct-answer').style.display = e === 'revealed' ? 'block' : 'none';
-            document.getElementById('ranking-container').style.display = e === 'ranking' ? 'block' : 'none';
-            document.getElementById('statusText').style.display = (e === 'idle' || e === 'playing') ? 'block' : 'none';
-            pContainer.style.display = e === 'ranking' ? 'block' : 'none'; // Particulas en ranking
+        function handleStateSwitch(estado) {
+            // Manejo de UI general
+            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
+            physContainer.style.display = estado === 'lobby' ? 'block' : 'none';
+            document.getElementById('game-wrapper').style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'flex' : 'none';
+            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
+            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
+            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
+            pContainer.style.display = estado === 'ranking' ? 'block' : 'none';
 
-            if(data.pregunta_actual && e !== 'lobby' && e !== 'ranking') {
-                const preg = data.pregunta_actual;
-                if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
-                    document.getElementById('target-image').src = preg.image;
-                    const grid = document.getElementById('grid-overlay');
-                    grid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`; grid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
-                    grid.innerHTML = ''; currentBlocks = [];
-                    for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
-                        let b = document.createElement('div'); b.className = 'grid-block'; grid.appendChild(b); currentBlocks.push(b);
-                    }
-                }
-                
-                if (e === 'idle') document.getElementById('statusText').innerText = "PREPARADOS...";
-                if (e === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; (preg.revealedBlocks || []).forEach(i => currentBlocks[i].classList.add('hidden')); }
-                if (e === 'revealed') { 
-                    currentBlocks.forEach(b => b.classList.add('hidden'));
-                    document.getElementById('correct-answer').innerText = preg.opciones[preg.correcta]; // Removido "RESPUESTA:"
-                }
+            if(estado === 'lobby') {
+                startPhysics();
+            } else {
+                physicsRunning = false;
+                bouncingEntities = [];
+                physContainer.innerHTML = ''; 
+                knownPlayers.clear(); // Resetea para la proxima sala
             }
-            if(e === 'ranking') renderRanking();
+
+            if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; lastRevealedCount = 0; }
+            if (estado === 'playing') document.getElementById('statusText').innerText = "¡ADIVINA!";
+            
+            // TRANSICIONES DE IMPACTO (Shake y Audio)
+            if (estado === 'revealed' && lastState !== 'revealed') { 
+                triggerShake(); playSound(sfxReveal);
+                // Asegurar revelar toda la grilla si no lo hizo Firebase
+                currentBlocks.forEach(b => b.classList.add('hidden')); 
+            }
+            if (estado === 'ranking' && lastState !== 'ranking') { 
+                triggerShake(); playSound(sfxRanking); renderRanking(); 
+            }
+            lastState = estado;
+        }
+
+        function triggerShake() {
+            document.body.classList.remove('shake');
+            void document.body.offsetWidth; // Trigger reflow
+            document.body.classList.add('shake');
+        }
+
+        let currentBlocks = [];
+        function updateGrid(preg) {
+            // Reconstruir grilla solo si la imagen cambia
+            if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
+                document.getElementById('target-image').src = preg.image;
+                const grid = document.getElementById('grid-overlay');
+                grid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`; grid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                grid.innerHTML = ''; currentBlocks = [];
+                for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
+                    let b = document.createElement('div'); b.className = 'grid-block'; grid.appendChild(b); currentBlocks.push(b);
+                }
+                lastRevealedCount = 0;
+            }
+            
+            // Actualizar bloques ocultos y sonido
+            const rev = preg.revealedBlocks || [];
+            if(rev.length > lastRevealedCount && lastState === 'playing') {
+                playSound(sfxBlip);
+                lastRevealedCount = rev.length;
+            }
+            rev.forEach(i => currentBlocks[i].classList.add('hidden'));
+
+            // Actualizar respuesta en memoria (se oculta por CSS si no es revealed)
+            document.getElementById('correct-answer').innerText = preg.opciones[preg.correcta];
         }
 
         function renderRanking() {
