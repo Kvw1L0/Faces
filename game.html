@@ -3,186 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pantalla Gigante - Arcade</title>
+    <title>Pantalla Gigante</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: white; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; background-color: #000; }
         
-        /* LOBBY */
-        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; }
-        .blink-text { color: #ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f; animation: blinker 1.5s linear infinite; }
+        /* FONDO CORPORATIVO */
+        .bg-layer { position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('fondo.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.8; }
+        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%); z-index: -1; }
+
+        /* LOBBY Y NOMBRES FLOTANTES */
+        #lobby-container { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 30px; z-index: 10; width: 100%; height: 100%; justify-content: center;}
+        .blink-text { color: #fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; animation: blinker 1.5s linear infinite; }
         @keyframes blinker { 50% { opacity: 0; } }
-        .pin-display { font-size: 8rem; color: #fff; background: #222; border: 8px solid #ffc107; padding: 20px 40px; box-shadow: 10px 10px 0px #d32f2f; }
-        .qr-box { width: 250px; height: 250px; border: 4px solid #fff; background: #fff; display: flex; justify-content: center; align-items: center; }
+        .pin-display { font-size: 8rem; color: #fff; background: rgba(227, 0, 15, 0.8); border: 8px solid #fff; padding: 20px 40px; box-shadow: 10px 10px 0px #000; backdrop-filter: blur(5px); }
+        .qr-box { width: 250px; height: 250px; border: 8px solid #fff; background: #fff; box-shadow: 10px 10px 0px #E3000f;}
         .qr-box img { max-width: 100%; max-height: 100%; }
+        
+        /* Animación de nombres entrando */
+        .floating-name { position: absolute; bottom: -50px; color: #fff; background: #E3000f; padding: 10px 20px; border: 2px solid #fff; font-size: 1.5rem; animation: floatUp 4s ease-out forwards; white-space: nowrap; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { opacity: 1; transform: translateY(-20vh) scale(1.2); } 100% { transform: translateY(-100vh) scale(1); opacity: 0; } }
 
         /* JUEGO */
-        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #ffc107; display: none; }
-        #target-image { width: 100%; height: 100%; object-fit: contain; background: #111; image-rendering: pixelated; }
+        #game-container { position: relative; width: 70vmin; height: 70vmin; border: 8px solid #fff; box-shadow: 10px 10px 0px #E3000f; display: none; z-index: 5; background:#000;}
+        #target-image { width: 100%; height: 100%; object-fit: contain; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
-        .grid-block { background-color: #000; border: 2px solid #222; transition: opacity 0.2s; }
+        .grid-block { background-color: #E3000f; border: 2px solid #fff; transition: opacity 0.2s; }
         .grid-block.hidden { opacity: 0; }
         
-        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #000; text-align: center; display: none; }
-        #correct-answer { display: none; font-size: 2.5rem; color: #00e676; margin-top: 30px; text-shadow: 4px 4px #000; background: #111; border: 4px solid #00e676; padding: 20px; }
+        .info-text { font-size: 2rem; color: #fff; margin-bottom: 20px; text-shadow: 4px 4px #E3000f; text-align: center; display: none; z-index: 5;}
+        #correct-answer { display: none; font-size: 4rem; color: #fff; margin-top: 30px; text-shadow: 6px 6px #E3000f; z-index: 5; text-align: center;}
         
-        /* RANKING ANIMADO */
-        #ranking-container { display: none; width: 90%; max-width: 1000px; text-align: center; }
-        #ranking-list { position: relative; height: 800px; /* Soporta 20 items de 40px */ margin-top: 20px; }
+        /* RANKING GLASSMORPHISM */
+        #ranking-container { display: none; width: 80%; max-width: 900px; text-align: center; z-index: 10; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        #ranking-list { position: relative; height: 60vh; margin-top: 30px; overflow: hidden; }
         .ranking-item { 
-            position: absolute; left: 0; width: 100%; height: 35px; background: #111; border: 2px solid #444; 
+            position: absolute; left: 0; width: 100%; height: 40px; background: rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.2); 
             display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box;
-            transition: transform 0.5s ease-in-out, background 0.3s; font-size: 14px;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); color: #fff; font-size: 14px;
         }
-        /* Top 5 Destacados */
-        .ranking-item.top1 { background: #ffc107; color: #000; border-color: #fff; font-size: 20px; height: 50px; z-index: 5; box-shadow: 4px 4px 0 #d32f2f; }
-        .ranking-item.top2 { background: #e0e0e0; color: #000; font-size: 18px; height: 45px; z-index: 4; }
-        .ranking-item.top3 { background: #cd7f32; color: #fff; font-size: 16px; height: 40px; z-index: 3; }
-        .ranking-item.top5 { border-color: #ffc107; color: #ffc107; font-weight: bold; }
+        .ranking-item.top1 { background: #E3000f; color: #fff; font-size: 24px; height: 60px; border: 2px solid #fff; font-weight: bold; }
+        .ranking-item.top2 { background: rgba(227, 0, 15, 0.7); font-size: 20px; height: 50px; }
+        .ranking-item.top3 { background: rgba(227, 0, 15, 0.5); font-size: 18px; height: 45px; }
+
+        /* PARTICULAS */
+        #particles { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; display: none; overflow: hidden; }
+        .particle { position: absolute; width: 10px; height: 10px; background: #fff; animation: fall linear infinite; }
+        .particle.red { background: #E3000f; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
     </style>
 </head>
 <body>
+    <div class="bg-layer"></div>
+    <div class="overlay"></div>
+    
+    <div id="particles"></div>
 
     <!-- LOBBY -->
     <div id="lobby-container">
-        <div class="blink-text">INSERT COIN TO JOIN</div>
-        <div style="font-size: 1.5rem;">PIN DE SALA:</div>
+        <div class="blink-text">ÚNETE A LA SALA</div>
         <div class="pin-display" id="lobby-pin">----</div>
-        <div class="qr-box">
-            <!-- QR ESTÁTICO AQUÍ -->
-            <img src="qr_estatico.png" alt="QR Code" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#ccc\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'14\'>QR AQUI</text></svg>'">
-        </div>
+        <div class="qr-box"><img src="qr_estatico.png" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#fff\'/></svg>'"></div>
     </div>
 
     <!-- JUEGO -->
     <div class="info-text" id="statusText">PREPARADOS...</div>
-    <div id="game-container">
-        <img id="target-image" src="" alt="">
-        <div id="grid-overlay"></div>
-    </div>
+    <div id="game-container"><img id="target-image" src="" alt=""><div id="grid-overlay"></div></div>
     <div id="correct-answer"></div>
 
     <!-- RANKING -->
     <div id="ranking-container">
-        <h1 style="color:#ffc107; font-size: 3rem; text-shadow: 4px 4px #d32f2f;">HIGH SCORES</h1>
+        <h1 style="color:#fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; margin: 0;">RANKING</h1>
         <div id="ranking-list"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+        import { getDatabase, ref, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
         const db = getDatabase(initializeApp(firebaseConfig));
         
-        let activeRoomRef = null;
-        let globalPlayers = {};
+        let activeRoomRef = null; let globalPlayers = {}; let knownPlayers = new Set();
 
-        // 1. Escuchar la Sala Activa
+        // Particulas setup
+        const pContainer = document.getElementById('particles');
+        for(let i=0; i<30; i++) {
+            let p = document.createElement('div'); p.className = i%2===0 ? 'particle red' : 'particle';
+            p.style.left = Math.random() * 100 + 'vw'; p.style.animationDuration = (Math.random() * 3 + 2) + 's'; p.style.animationDelay = Math.random() * 2 + 's';
+            pContainer.appendChild(p);
+        }
+
         onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
             const pin = snap.val();
             if(pin) {
                 document.getElementById('lobby-pin').innerText = pin;
-                if(activeRoomRef) return; // Ya estamos escuchando esta sala
-                
-                // Conectarse a los eventos de esta sala
+                if(activeRoomRef) return; 
                 activeRoomRef = ref(db, `activacion_arcade/salas/${pin}`);
                 
-                // Escuchar Jugadores
-                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (jugadoresSnap) => {
-                    globalPlayers = jugadoresSnap.val() || {};
+                // Animación de nombres nuevos en lobby
+                onChildAdded(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (childSnap) => {
+                    const p = childSnap.val();
+                    if(!knownPlayers.has(childSnap.key)) {
+                        knownPlayers.add(childSnap.key);
+                        if(document.getElementById('lobby-container').style.display === 'flex') {
+                            const nameDiv = document.createElement('div'); nameDiv.className = 'floating-name'; nameDiv.innerText = p.nombre;
+                            nameDiv.style.left = (20 + Math.random() * 60) + 'vw';
+                            document.body.appendChild(nameDiv);
+                            setTimeout(() => nameDiv.remove(), 4000);
+                        }
+                    }
+                });
+
+                onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (snap) => {
+                    globalPlayers = snap.val() || {};
                     if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
                 });
 
-                // Escuchar Estado
-                onValue(activeRoomRef, (estadoSnap) => {
-                    const data = estadoSnap.val();
-                    if (!data) return;
-                    handleGameState(data);
-                });
-            } else {
-                document.getElementById('lobby-pin').innerText = "----";
-                document.getElementById('lobby-container').style.display = 'flex';
-                document.getElementById('game-container').style.display = 'none';
-                document.getElementById('ranking-container').style.display = 'none';
-            }
+                onValue(activeRoomRef, (snap) => { if(snap.val()) handleGameState(snap.val()); });
+            } else { location.reload(); }
         });
 
         let currentBlocks = [];
-        const container = document.getElementById('game-container');
-        const gridOverlay = document.getElementById('grid-overlay');
-
         function handleGameState(data) {
-            const estado = data.estado;
-            document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
-            container.style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'block' : 'none';
-            document.getElementById('correct-answer').style.display = estado === 'revealed' ? 'block' : 'none';
-            document.getElementById('ranking-container').style.display = estado === 'ranking' ? 'block' : 'none';
-            document.getElementById('statusText').style.display = (estado === 'idle' || estado === 'playing') ? 'block' : 'none';
+            const e = data.estado;
+            document.getElementById('lobby-container').style.display = e === 'lobby' ? 'flex' : 'none';
+            document.getElementById('game-container').style.display = (e === 'idle' || e === 'playing' || e === 'revealed') ? 'block' : 'none';
+            document.getElementById('correct-answer').style.display = e === 'revealed' ? 'block' : 'none';
+            document.getElementById('ranking-container').style.display = e === 'ranking' ? 'block' : 'none';
+            document.getElementById('statusText').style.display = (e === 'idle' || e === 'playing') ? 'block' : 'none';
+            pContainer.style.display = e === 'ranking' ? 'block' : 'none'; // Particulas en ranking
 
-            if(data.pregunta_actual && estado !== 'lobby' && estado !== 'ranking') {
+            if(data.pregunta_actual && e !== 'lobby' && e !== 'ranking') {
                 const preg = data.pregunta_actual;
                 if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
                     document.getElementById('target-image').src = preg.image;
-                    gridOverlay.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`;
-                    gridOverlay.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
-                    gridOverlay.innerHTML = '';
-                    currentBlocks = [];
+                    const grid = document.getElementById('grid-overlay');
+                    grid.style.gridTemplateColumns = `repeat(${preg.gridSize}, 1fr)`; grid.style.gridTemplateRows = `repeat(${preg.gridSize}, 1fr)`;
+                    grid.innerHTML = ''; currentBlocks = [];
                     for (let i = 0; i < preg.gridSize * preg.gridSize; i++) {
-                        const block = document.createElement('div');
-                        block.classList.add('grid-block');
-                        gridOverlay.appendChild(block);
-                        currentBlocks.push(block);
+                        let b = document.createElement('div'); b.className = 'grid-block'; grid.appendChild(b); currentBlocks.push(b);
                     }
                 }
                 
-                if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; }
-                if (estado === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; updateBlocks(preg.revealedBlocks || []); }
-                if (estado === 'revealed') { 
+                if (e === 'idle') document.getElementById('statusText').innerText = "PREPARADOS...";
+                if (e === 'playing') { document.getElementById('statusText').innerText = "¡ADIVINA!"; (preg.revealedBlocks || []).forEach(i => currentBlocks[i].classList.add('hidden')); }
+                if (e === 'revealed') { 
                     currentBlocks.forEach(b => b.classList.add('hidden'));
-                    document.getElementById('correct-answer').innerText = `RESPUESTA: ${preg.opciones[preg.correcta]}`;
+                    document.getElementById('correct-answer').innerText = preg.opciones[preg.correcta]; // Removido "RESPUESTA:"
                 }
             }
-
-            if(estado === 'ranking') renderRanking();
-        }
-
-        function updateBlocks(revealedIndices) {
-            currentBlocks.forEach((b, i) => revealedIndices.includes(i) ? b.classList.add('hidden') : b.classList.remove('hidden'));
+            if(e === 'ranking') renderRanking();
         }
 
         function renderRanking() {
             const list = document.getElementById('ranking-list');
-            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20); // Top 20
-            
-            let yOffset = 0;
-
-            sorted.forEach((player, index) => {
-                let el = document.getElementById('rank-' + player.id);
-                if (!el) {
-                    el = document.createElement('div');
-                    el.id = 'rank-' + player.id;
-                    list.appendChild(el);
-                }
-                
-                // Reiniciar clases
+            const sorted = Object.entries(globalPlayers).map(([id, p]) => ({id, ...p})).sort((a, b) => b.puntaje - a.puntaje).slice(0, 20);
+            let y = 0;
+            sorted.forEach((player, i) => {
+                let el = document.getElementById('r-' + player.id);
+                if (!el) { el = document.createElement('div'); el.id = 'r-' + player.id; list.appendChild(el); }
                 el.className = 'ranking-item';
-                if (index === 0) el.classList.add('top1');
-                else if (index === 1) el.classList.add('top2');
-                else if (index === 2) el.classList.add('top3');
-                else if (index <= 4) el.classList.add('top5');
-
-                el.innerHTML = `<span>#${index+1} ${player.nombre}</span><span>${player.puntaje}</span>`;
-                
-                // Animar posición Y
-                el.style.transform = `translateY(${yOffset}px)`;
-                
-                // Calcular espacio para el siguiente (Top 3 son más altos)
-                if(index === 0) yOffset += 60;
-                else if(index === 1) yOffset += 55;
-                else if(index === 2) yOffset += 50;
-                else yOffset += 45;
+                if (i === 0) el.classList.add('top1'); else if (i === 1) el.classList.add('top2'); else if (i === 2) el.classList.add('top3');
+                el.innerHTML = `<span>#${i+1} ${player.nombre}</span><span>${player.puntaje} PTS</span>`;
+                el.style.transform = `translateY(${y}px)`;
+                y += i === 0 ? 70 : (i === 1 ? 60 : (i === 2 ? 55 : 50));
             });
         }
     </script>

@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Arcade V3</title>
+    <title>Admin - BTL Pro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
         body { font-family: 'Press Start 2P', monospace; background-color: #000; color: #fff; padding: 20px; display: flex; flex-direction: column; align-items: center; font-size: 12px; line-height: 1.5; }
-        .panel { background: #111; padding: 25px; width: 100%; max-width: 700px; border: 4px solid #ffc107; box-shadow: 8px 8px 0px rgba(255,193,7,0.3); }
-        h1, h3 { color: #ffc107; text-align: center; margin-top: 0; text-shadow: 2px 2px #d32f2f; }
+        .panel { background: rgba(0,0,0,0.8); padding: 25px; width: 100%; max-width: 700px; border: 2px solid #E3000f; border-radius: 10px; }
+        h1 { color: #fff; text-align: center; text-shadow: 2px 2px #E3000f; margin-bottom: 30px; }
         
-        .control-group { margin-bottom: 25px; border: 2px dashed #444; padding: 15px; }
+        .control-group { margin-bottom: 25px; border: 1px dashed #555; padding: 15px; border-radius: 5px; }
         label { color: #aaa; display: block; margin-bottom: 10px; font-size: 10px; }
         
         input[type="text"], input[type="file"], select, button { 
-            font-family: 'Press Start 2P', monospace; padding: 12px; font-size: 10px; 
-            border: 2px solid #fff; background: #000; color: #fff; outline: none;
+            font-family: 'Press Start 2P', monospace; padding: 12px; font-size: 12px; 
+            border: 2px solid #fff; background: #000; color: #fff; outline: none; border-radius: 5px;
         }
         
-        .btn-arcade { cursor: pointer; text-transform: uppercase; border: 2px solid #fff; box-shadow: 4px 4px 0px #fff; transition: 0.1s; font-weight: bold; }
-        .btn-arcade:active:not(:disabled) { box-shadow: 0px 0px 0px #fff; transform: translate(4px, 4px); }
-        .btn-primary { background-color: #ffc107; color: #000; border-color: #ffc107; box-shadow: 4px 4px 0px #d32f2f; }
-        .btn-primary:active:not(:disabled) { box-shadow: 0px 0px 0px #d32f2f; }
-        .btn-danger { background-color: #d32f2f; border-color: #ff5252; box-shadow: 4px 4px 0px #8b0000; }
-        .btn-arcade:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-action { cursor: pointer; text-transform: uppercase; border: 2px solid #fff; transition: 0.1s; font-weight: bold; }
+        .btn-action:active:not(:disabled) { transform: scale(0.95); }
+        .btn-primary { background-color: #E3000f; color: #fff; border-color: #fff; }
+        .btn-white { background-color: #fff; color: #E3000f; border-color: #E3000f; }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
         
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .option-item { display: flex; align-items: center; gap: 10px; }
@@ -32,65 +31,63 @@
         .btn-row { display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap; }
         .btn-row > * { flex: 1; min-width: 150px; }
         
-        #room-status { font-size: 16px; color: #00e676; text-align: center; margin-bottom: 20px; display: none; }
+        #room-status { font-size: 16px; color: #fff; text-align: center; margin-bottom: 20px; display: none; background: #E3000f; padding: 10px; border-radius: 5px;}
         .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="panel">
-        <h1>ARCADE ADMIN</h1>
+        <h1>CONTROL BTL</h1>
         
         <!-- CONTROL DE SALA -->
         <div class="control-group" id="room-controls">
-            <button id="btnCreateRoom" class="btn-arcade btn-primary" style="width:100%; padding: 20px;">[ INICIAR NUEVA SALA ]</button>
+            <button id="btnCreateRoom" class="btn-action btn-primary" style="width:100%; padding: 20px;">[ INICIAR SALA ]</button>
         </div>
         
-        <div id="room-status">SALA ACTIVA: <span id="pinDisplay">----</span></div>
+        <div id="room-status">SALA: <span id="pinDisplay">----</span></div>
 
-        <!-- CONTENIDO DEL JUEGO (Oculto hasta crear sala) -->
+        <!-- CONTENIDO DEL JUEGO -->
         <div id="game-controls" class="hidden">
             <div class="control-group">
-                <label>1. CARGAR PREGUNTA (AUTO-COMPRESIÓN)</label>
-                <input type="file" id="imageInput" accept="image/*" style="width: 100%; margin-bottom:15px;">
+                <label>1. CARGAR FOTO (COMPRESIÓN AUTO)</label>
+                <input type="file" id="imageInput" accept="image/*" style="width: 100%; margin-bottom:15px; box-sizing: border-box;">
                 <div class="options-grid">
                     <div class="option-item"><input type="radio" name="correcta" value="0" checked> <input type="text" id="opt0" placeholder="OPT 1"></div>
                     <div class="option-item"><input type="radio" name="correcta" value="1"> <input type="text" id="opt1" placeholder="OPT 2"></div>
                     <div class="option-item"><input type="radio" name="correcta" value="2"> <input type="text" id="opt2" placeholder="OPT 3"></div>
                     <div class="option-item"><input type="radio" name="correcta" value="3"> <input type="text" id="opt3" placeholder="OPT 4"></div>
                 </div>
-                <button id="btnAdd" class="btn-arcade" style="width:100%">GUARDAR EN PLAYLIST</button>
+                <button id="btnAdd" class="btn-action btn-white" style="width:100%">GUARDAR PREGUNTA</button>
                 <div id="playlistDisplay" style="text-align: center; margin-top: 10px; color:#aaa;">PREGUNTAS: 0</div>
             </div>
 
             <div class="control-group">
-                <label>2. NAVEGACIÓN PLAYLIST</label>
+                <label>2. NAVEGACIÓN</label>
                 <div class="btn-row">
-                    <button class="btn-arcade" id="btnPrev" disabled>< ANTERIOR</button>
-                    <button class="btn-arcade" id="btnNext" disabled>SIGUIENTE ></button>
+                    <button class="btn-action" id="btnPrev" disabled>< ANT</button>
+                    <button class="btn-action" id="btnNext" disabled>SIG ></button>
                 </div>
             </div>
 
             <div class="control-group">
                 <label>3. CONTROLES EN VIVO</label>
                 <div class="btn-row">
-                    <select id="timeSelect">
-                        <option value="15">15 SEG</option>
-                        <option value="30" selected>30 SEG</option>
-                    </select>
-                    <select id="gridSelect">
-                        <option value="4" selected>GRILLA: 4x4</option>
-                        <option value="6">GRILLA: 6x6</option>
-                    </select>
+                    <select id="timeSelect"><option value="15">15 SEG</option><option value="30" selected>30 SEG</option></select>
+                    <select id="gridSelect"><option value="4" selected>GRILLA 4x4</option><option value="6">GRILLA 6x6</option></select>
                 </div>
                 <div class="btn-row">
-                    <button id="btnStart" class="btn-arcade btn-primary" disabled>LANZAR PREGUNTA</button>
-                    <button id="btnReveal" class="btn-arcade btn-danger" disabled>REVELAR</button>
+                    <button id="btnStart" class="btn-action btn-primary" disabled>LANZAR PREGUNTA</button>
+                    <button id="btnReveal" class="btn-action btn-white" disabled>REVELAR RESPUESTA</button>
                 </div>
                 <div class="btn-row">
-                    <button id="btnLobby" class="btn-arcade">VER LOBBY</button>
-                    <button id="btnRanking" class="btn-arcade">VER RANKING</button>
+                    <button id="btnRanking" class="btn-action">VER RANKING</button>
+                    <button id="btnNextRound" class="btn-action btn-primary" style="display:none;">SIGUIENTE RONDA >></button>
                 </div>
-                <button id="btnCloseRoom" class="btn-arcade btn-danger" style="width:100%; margin-top:15px;">CERRAR SALA DEFINITIVO</button>
+            </div>
+
+            <div class="control-group">
+                <button id="btnExport" class="btn-action btn-white" style="width:100%; margin-bottom:10px;">💾 EXPORTAR DATA (CSV)</button>
+                <button id="btnCloseRoom" class="btn-action" style="width:100%; background:#333;">CERRAR SALA DEFINITIVO</button>
             </div>
         </div>
     </div>
@@ -100,23 +97,13 @@
         import { getDatabase, ref, set, update, get } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBUDLHNHmourA_rDwa01-GUkqE06mE6hfs", authDomain: "celebrity-baby-35179.firebaseapp.com", databaseURL: "https://celebrity-baby-35179-default-rtdb.firebaseio.com", projectId: "celebrity-baby-35179" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const db = getDatabase(initializeApp(firebaseConfig));
         
-        let currentPIN = null;
-        let roomRef = null;
-        let playlist = [];
-        let currentIndex = -1;
-        let intervalId;
-        let availableBlocks = [];
-        let revealedBlocks = [];
+        let currentPIN = null; let roomRef = null; let playlist = []; let currentIndex = -1; let intervalId; let availableBlocks = []; let revealedBlocks = [];
 
-        // 1. Crear Sala
         document.getElementById('btnCreateRoom').onclick = () => {
-            currentPIN = Math.floor(1000 + Math.random() * 9000).toString(); // PIN 4 dígitos
+            currentPIN = Math.floor(1000 + Math.random() * 9000).toString();
             roomRef = ref(db, `activacion_arcade/salas/${currentPIN}`);
-            
-            // Configurar sala y notificar a la pantalla gigante
             set(roomRef, { estado: 'lobby', creador: Date.now() });
             set(ref(db, 'activacion_arcade/sala_activa'), currentPIN);
             
@@ -127,41 +114,26 @@
         };
 
         document.getElementById('btnCloseRoom').onclick = () => {
-            if(confirm("¿Cerrar sala y expulsar jugadores?")) {
-                set(roomRef, null);
-                set(ref(db, 'activacion_arcade/sala_activa'), null);
-                location.reload();
-            }
+            if(confirm("¿Cerrar sala y expulsar jugadores?")) { set(roomRef, null); set(ref(db, 'activacion_arcade/sala_activa'), null); location.reload(); }
         };
 
-        // Compresión de imagen
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 600; let w = img.width, h = img.height;
+                const img = new Image(); img.onload = () => {
+                    const canvas = document.createElement('canvas'); const MAX = 600; let w = img.width, h = img.height;
                     if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     callback(canvas.toDataURL('image/jpeg', 0.6));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(file);
         }
 
         document.getElementById('btnAdd').onclick = () => {
             const file = document.getElementById('imageInput').files[0];
-            const opts = [
-                document.getElementById('opt0').value, document.getElementById('opt1').value,
-                document.getElementById('opt2').value, document.getElementById('opt3').value
-            ];
+            const opts = [document.getElementById('opt0').value, document.getElementById('opt1').value, document.getElementById('opt2').value, document.getElementById('opt3').value];
             const correcta = parseInt(document.querySelector('input[name="correcta"]:checked').value);
-            
             if(!file || opts.includes("")) { alert("Faltan datos"); return; }
-
             compressImage(file, (base64Img) => {
                 playlist.push({ image: base64Img, opciones: opts, correcta: correcta });
                 document.getElementById('playlistDisplay').innerText = `PREGUNTAS: ${playlist.length}`;
@@ -179,30 +151,25 @@
 
         document.getElementById('btnNext').onclick = () => { if(currentIndex < playlist.length-1) { currentIndex++; syncToScreen(); } };
         document.getElementById('btnPrev').onclick = () => { if(currentIndex > 0) { currentIndex--; syncToScreen(); } };
+        document.getElementById('btnNextRound').onclick = () => {
+            document.getElementById('btnNextRound').style.display = 'none';
+            document.getElementById('btnRanking').style.display = 'block';
+            if(currentIndex < playlist.length-1) { currentIndex++; syncToScreen(); }
+            else { update(roomRef, { estado: 'idle' }); }
+        };
 
         function syncToScreen() {
             clearInterval(intervalId);
             const size = parseInt(document.getElementById('gridSelect').value);
-            availableBlocks = Array.from({length: size*size}, (_, i) => i);
-            revealedBlocks = [];
-
-            update(roomRef, {
-                estado: 'idle',
-                pregunta_actual: { ...playlist[currentIndex], gridSize: size, revealedBlocks: [] }
-            });
-            document.getElementById('btnStart').disabled = false;
-            document.getElementById('btnReveal').disabled = true;
-            updateUI();
+            availableBlocks = Array.from({length: size*size}, (_, i) => i); revealedBlocks = [];
+            update(roomRef, { estado: 'idle', pregunta_actual: { ...playlist[currentIndex], gridSize: size, revealedBlocks: [] } });
+            document.getElementById('btnStart').disabled = false; document.getElementById('btnReveal').disabled = true; updateUI();
         }
 
         document.getElementById('btnStart').onclick = () => {
-            const time = parseInt(document.getElementById('timeSelect').value);
-            const size = parseInt(document.getElementById('gridSelect').value);
-            
+            const time = parseInt(document.getElementById('timeSelect').value); const size = parseInt(document.getElementById('gridSelect').value);
             update(roomRef, { estado: 'playing', 'pregunta_actual/startTime': Date.now(), 'pregunta_actual/totalTimeSecs': time });
-            document.getElementById('btnStart').disabled = true;
-            document.getElementById('btnReveal').disabled = false;
-
+            document.getElementById('btnStart').disabled = true; document.getElementById('btnReveal').disabled = false;
             const interval = (time * 1000) / (size*size);
             intervalId = setInterval(() => {
                 if (availableBlocks.length === 0) { clearInterval(intervalId); return; }
@@ -213,8 +180,23 @@
         };
 
         document.getElementById('btnReveal').onclick = () => { clearInterval(intervalId); update(roomRef, { estado: 'revealed' }); document.getElementById('btnReveal').disabled = true; };
-        document.getElementById('btnRanking').onclick = () => { clearInterval(intervalId); update(roomRef, { estado: 'ranking' }); };
-        document.getElementById('btnLobby').onclick = () => { clearInterval(intervalId); update(roomRef, { estado: 'lobby' }); };
+        document.getElementById('btnRanking').onclick = () => { 
+            clearInterval(intervalId); update(roomRef, { estado: 'ranking' }); 
+            document.getElementById('btnRanking').style.display = 'none';
+            document.getElementById('btnNextRound').style.display = 'block';
+        };
+
+        // EXPORTAR A CSV
+        document.getElementById('btnExport').onclick = async () => {
+            if(!currentPIN) return;
+            const snap = await get(ref(db, `activacion_arcade/salas/${currentPIN}/jugadores`));
+            const jugadores = snap.val(); if(!jugadores) { alert("No hay datos"); return; }
+            let csv = "Nickname,Puntaje\n";
+            Object.values(jugadores).sort((a,b)=>b.puntaje - a.puntaje).forEach(j => { csv += `${j.nombre},${j.puntaje}\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `Ranking_Sala_${currentPIN}.csv`; a.click();
+        };
     </script>
 </body>
 </html>
