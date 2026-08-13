@@ -7,50 +7,95 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; align-items: center; background-color: #000; overscroll-behavior-y: none; -webkit-text-size-adjust: 100%; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Press Start 2P', monospace; display: flex; 
+            flex-direction: column; align-items: center; 
+            background-color: #000; overscroll-behavior-y: none; 
+            -webkit-text-size-adjust: 100%; 
+        }
         
-        .bg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('fondo.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.3; }
+        /* CORRECCIÓN FONDO MÓVIL */
+        .bg-layer { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background-image: url('fondo.png'); background-size: cover; 
+            background-position: center; z-index: 0; opacity: 0.4; 
+            pointer-events: none; 
+        }
         
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; z-index: 1;}
+        .screen { 
+            display: none; width: 100%; height: 100%; flex-direction: column; 
+            align-items: center; justify-content: center; padding: 20px; 
+            box-sizing: border-box; z-index: 10; position: relative;
+        }
         .active { display: flex; }
 
-        /* BLINDAJE iOS */
-        #login-screen input { width: 100%; max-width: 300px; padding: 15px; font-size: 16px; text-align: center; border: 4px solid #fff; background: rgba(0,0,0,0.8); color: #fff; margin-bottom: 20px; font-family: 'Press Start 2P', monospace; text-transform: uppercase; border-radius: 0; -webkit-appearance: none;}
-        .btn-action { background: #E3000f; color: #fff; font-size: 16px; padding: 20px; border: 4px solid #fff; cursor: pointer; text-transform: uppercase; font-family: 'Press Start 2P', monospace; width: 100%; max-width: 300px; transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;}
+        #login-screen input { 
+            width: 100%; max-width: 300px; padding: 15px; font-size: 16px; 
+            text-align: center; border: 4px solid #fff; background: rgba(0,0,0,0.8); 
+            color: #fff; margin-bottom: 20px; font-family: 'Press Start 2P', monospace; 
+            text-transform: uppercase; border-radius: 0; -webkit-appearance: none;
+        }
+        
+        .btn-action { 
+            background: #E3000f; color: #fff; font-size: 16px; padding: 20px; 
+            border: 4px solid #fff; cursor: pointer; text-transform: uppercase; 
+            font-family: 'Press Start 2P', monospace; width: 100%; max-width: 300px; 
+            transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        }
+        
         .btn-action:active { transform: scale(0.95); background: #fff; color: #E3000f;}
 
-        #mini-game-container { position: relative; width: 100%; max-width: 250px; aspect-ratio: 1/1; border: 4px solid #fff; margin-bottom: 20px; background: #000; box-shadow: 0 0 20px rgba(227,0,15,0.5);}
+        #mini-game-container { 
+            position: relative; width: 100%; max-width: 250px; aspect-ratio: 1/1; 
+            border: 4px solid #fff; margin-bottom: 20px; background: #000; 
+            box-shadow: 0 0 20px rgba(227,0,15,0.5);
+        }
+        
         #mini-target-image { width: 100%; height: 100%; object-fit: contain; }
         #mini-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
+        
         .grid-block { background-color: #E3000f; border: 1px solid #fff; transition: opacity 0.2s; }
         .grid-block.hidden { opacity: 0; }
 
         .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
-        .btn-option { background: rgba(0,0,0,0.8); color: #fff; padding: 20px 10px; font-size: 12px; border: 4px solid #fff; cursor: pointer; word-wrap: break-word; font-family: 'Press Start 2P', monospace; transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;}
-        .btn-option.selected { background: #fff; color: #E3000f; border-color: #E3000f; transform: scale(1.05); }
+        
+        .btn-option { 
+            background: rgba(0,0,0,0.8); color: #fff; padding: 20px 10px; 
+            font-size: 12px; border: 4px solid #fff; cursor: pointer; 
+            word-wrap: break-word; font-family: 'Press Start 2P', monospace; 
+            transition: 0.1s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn-option.selected { 
+            background: #fff; color: #E3000f; border-color: #E3000f; transform: scale(1.05); 
+        }
 
         #result-screen { text-align: center; }
         #res-title { font-size: 24px; text-shadow: 2px 2px #000; line-height: 1.5; color: #fff;}
         #res-subtitle { font-size: 16px; margin-top: 20px; color: #fff;}
 
-        #score-display { position: absolute; top: 15px; right: 15px; font-size: 12px; color: #fff; background: #E3000f; padding: 10px; border: 2px solid #fff; z-index: 100;}
+        #score-display { 
+            position: absolute; top: 15px; right: 15px; font-size: 12px; 
+            color: #fff; background: #E3000f; padding: 10px; border: 2px solid #fff; z-index: 100;
+        }
     </style>
 </head>
 <body>
     <div class="bg-layer"></div>
     <div id="score-display" style="display:none;">0 PTS</div>
 
+    <!-- LOGIN -->
     <div id="login-screen" class="screen active">
-        <h1 style="color:#fff; margin-bottom: 30px; text-shadow: 4px 4px #E3000f; text-align: center;">ÚNETE</h1>
+        <!-- Texto "ÚNETE" eliminado -->
         <input type="text" id="pinInput" placeholder="PIN SALA" maxlength="4" pattern="[0-9]*" inputmode="numeric">
         <input type="text" id="nickname" placeholder="NICKNAME" maxlength="12">
         <button class="btn-action" id="btnJoin">ENTRAR</button>
     </div>
 
+    <!-- JUEGO -->
     <div id="game-screen" class="screen">
-        <!-- Texto limpio. Sin instrucciones invasivas -->
         <div id="game-status-text" style="color:#fff; font-size: 12px; margin-bottom: 15px; text-align: center; line-height: 1.5; background: #E3000f; padding: 10px; border: 2px solid #fff; opacity:0;">...</div>
-        
         <div id="mini-game-container" style="display:none;">
             <img id="mini-target-image" src="" alt="">
             <div id="mini-grid"></div>
@@ -63,6 +108,7 @@
         </div>
     </div>
 
+    <!-- RESULTADO -->
     <div id="result-screen" class="screen">
         <h1 id="res-title">...</h1>
         <p id="res-subtitle">...</p>
@@ -93,7 +139,6 @@
         let pointsEarnedRound = 0;
         let questionProcessed = false;
         
-        // BANDERA DE BLOQUEO: Cuando el tiempo termina, pasa a false.
         let canAnswer = false; 
 
         const screens = { login: document.getElementById('login-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
@@ -144,7 +189,7 @@
                     
                     localSelectedOption = -1; 
                     questionProcessed = false;
-                    canAnswer = true; // Habilita interacción
+                    canAnswer = true; 
                     
                     if (preg && e === 'idle') {
                         if (document.getElementById('mini-target-image').src !== preg.image) {
@@ -161,7 +206,6 @@
                             const btn = document.getElementById(`btnOpt${i}`); btn.innerText = preg.opciones[i]; btn.classList.remove('selected');
                             
                             btn.onclick = () => {
-                                // BLOQUEO: Si el servidor ya corto el tiempo, ignora clics.
                                 if(!canAnswer) return; 
 
                                 localSelectedOption = i;
@@ -186,7 +230,6 @@
                     revealed.forEach(idx => { if (currentBlocks[idx]) currentBlocks[idx].classList.add('hidden'); });
                 }
                 else if (e === 'revealed') {
-                    // CORTA EL INGRESO DE RESPUESTAS INMEDIATAMENTE
                     canAnswer = false; 
 
                     showScreen('result'); const scr = screens.result;

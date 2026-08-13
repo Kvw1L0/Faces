@@ -9,8 +9,8 @@
         
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Press Start 2P', monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; background-color: #000; }
         
-        /* FONDO CORPORATIVO */
-        .bg-layer { position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('fondo.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.8; }
+        /* FONDO CORPORATIVO ACTUALIZADO */
+        .bg-layer { position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('fondohorizontal.png'); background-size: cover; background-position: center; z-index: -2; opacity: 0.8; }
         .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%); z-index: -1; }
 
         /* LOBBY Y FISICAS */
@@ -21,7 +21,6 @@
         .qr-box { width: 250px; height: 250px; border: 8px solid #fff; background: #fff; box-shadow: 10px 10px 0px #E3000f;}
         .qr-box img { max-width: 100%; max-height: 100%; }
         
-        /* Contenedor de nombres rebotando */
         #physics-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5; display: none; }
         .bouncing-name { position: absolute; color: #fff; background: #E3000f; padding: 10px 20px; border: 2px solid #fff; font-size: 1.5rem; white-space: nowrap; box-shadow: 4px 4px 0 #000; }
 
@@ -31,11 +30,10 @@
         #target-image { width: 100%; height: 100%; object-fit: contain; }
         #grid-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; }
         
-        /* LOGO EN LOS BLOQUES ROJOS */
         .grid-block { 
             background-color: #E3000f; 
             background-image: url('logo_bloque.png'); 
-            background-size: 50%; /* Ajusta tamaño del logo interior */
+            background-size: 50%; 
             background-repeat: no-repeat;
             background-position: center;
             border: 2px solid #fff; 
@@ -75,7 +73,6 @@
     </style>
 </head>
 <body>
-    <!-- AUDIOS (Se cargarán en memoria) -->
     <audio id="audioBlip" src="sfx_blip.mp3" preload="auto"></audio>
     <audio id="audioReveal" src="sfx_reveal.mp3" preload="auto"></audio>
     <audio id="audioRanking" src="sfx_ranking.mp3" preload="auto"></audio>
@@ -83,25 +80,20 @@
     <div class="bg-layer"></div>
     <div class="overlay"></div>
     <div id="particles"></div>
-
-    <!-- MOTOR DE FISICAS (Nombres) -->
     <div id="physics-container"></div>
 
-    <!-- LOBBY -->
     <div id="lobby-container">
-        <div class="blink-text">ÚNETE A LA SALA</div>
+        <div class="blink-text">SALA DE JUEGO</div>
         <div class="pin-display" id="lobby-pin">----</div>
         <div class="qr-box" id="lobby-center-box"><img src="qr_estatico.png" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'><rect width=\'100\' height=\'100\' fill=\'#fff\'/></svg>'"></div>
     </div>
 
-    <!-- JUEGO -->
     <div id="game-wrapper">
         <div class="info-text" id="statusText">PREPARADOS...</div>
         <div id="game-container"><img id="target-image" src="" alt=""><div id="grid-overlay"></div></div>
         <div id="correct-answer"></div>
     </div>
 
-    <!-- RANKING -->
     <div id="ranking-container">
         <h1 style="color:#fff; font-size: 3rem; text-shadow: 4px 4px #E3000f; margin: 0;">RANKING</h1>
         <div id="ranking-list"></div>
@@ -117,17 +109,15 @@
         let globalPlayers = {}; let knownPlayers = new Set();
         let lastState = ''; let lastRevealedCount = 0;
         
-        // Elementos de Audio
         const sfxBlip = document.getElementById('audioBlip');
         const sfxReveal = document.getElementById('audioReveal');
         const sfxRanking = document.getElementById('audioRanking');
 
         function playSound(audioEl) {
             audioEl.currentTime = 0;
-            audioEl.play().catch(e => console.log("Audio bloqueado por navegador hasta interacción", e));
+            audioEl.play().catch(e => console.log("Audio bloqueado por navegador", e));
         }
 
-        // Particulas setup
         const pContainer = document.getElementById('particles');
         for(let i=0; i<30; i++) {
             let p = document.createElement('div'); p.className = i%2===0 ? 'particle red' : 'particle';
@@ -135,7 +125,6 @@
             pContainer.appendChild(p);
         }
 
-        // --- MOTOR FISICO DE NOMBRES ---
         const physContainer = document.getElementById('physics-container');
         let bouncingEntities = [];
         let physicsRunning = false;
@@ -148,32 +137,22 @@
         function updatePhysics() {
             if(!physicsRunning) return;
             const w = window.innerWidth; const h = window.innerHeight;
-            
-            // Obtener caja de colision central (QR + PIN)
             const lobbyBox = document.getElementById('lobby-container').getBoundingClientRect();
-            // Ampliar un poco el margen de rebote
             const cLeft = lobbyBox.left - 20; const cRight = lobbyBox.right + 20;
             const cTop = lobbyBox.top - 20; const cBottom = lobbyBox.bottom + 20;
 
             bouncingEntities.forEach(entity => {
                 entity.x += entity.vx; entity.y += entity.vy;
-                
-                // Colision bordes pantalla
                 if(entity.x <= 0 || entity.x + entity.width >= w) entity.vx *= -1;
                 if(entity.y <= 0 || entity.y + entity.height >= h) entity.vy *= -1;
 
-                // Colision central (Caja negra)
                 const right = entity.x + entity.width; const bottom = entity.y + entity.height;
                 if (right > cLeft && entity.x < cRight && bottom > cTop && entity.y < cBottom) {
-                    // Determinar lado de impacto
                     const fromLeft = Math.abs(right - cLeft); const fromRight = Math.abs(entity.x - cRight);
                     const fromTop = Math.abs(bottom - cTop); const fromBottom = Math.abs(entity.y - cBottom);
                     const min = Math.min(fromLeft, fromRight, fromTop, fromBottom);
-                    
-                    if(min === fromLeft || min === fromRight) entity.vx *= -1;
-                    else entity.vy *= -1;
+                    if(min === fromLeft || min === fromRight) entity.vx *= -1; else entity.vy *= -1;
                 }
-
                 entity.el.style.transform = `translate(${entity.x}px, ${entity.y}px)`;
             });
             requestAnimationFrame(updatePhysics);
@@ -187,19 +166,17 @@
             bouncingEntities.push({
                 el: el, width: rect.width, height: rect.height,
                 x: Math.random() * (window.innerWidth - rect.width),
-                y: -50, // Cae desde arriba
+                y: -50,
                 vx: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2),
                 vy: 2 + Math.random() * 2
             });
         }
-        // -------------------------------
 
         onValue(ref(db, 'activacion_arcade/sala_activa'), (snap) => {
             const pin = snap.val();
             if(pin) {
                 document.getElementById('lobby-pin').innerText = pin;
                 
-                // 1. Escuchar Nuevos Jugadores (Solo para animar)
                 onChildAdded(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (childSnap) => {
                     const p = childSnap.val();
                     if(!knownPlayers.has(childSnap.key)) {
@@ -210,20 +187,17 @@
                     }
                 });
 
-                // 2. Escuchar puntajes (Ranking)
                 onValue(ref(db, `activacion_arcade/salas/${pin}/jugadores`), (snap) => {
                     globalPlayers = snap.val() || {};
                     if(document.getElementById('ranking-container').style.display === 'block') renderRanking();
                 });
 
-                // 3. Escuchar ESTADO GLOBAL (Evita loop de grilla)
                 onValue(ref(db, `activacion_arcade/salas/${pin}/estado`), (snap) => {
                     const estado = snap.val();
                     if(!estado) return;
                     handleStateSwitch(estado);
                 });
 
-                // 4. Escuchar PREGUNTA (La grilla)
                 onValue(ref(db, `activacion_arcade/salas/${pin}/pregunta_actual`), (snap) => {
                     const preg = snap.val();
                     if(!preg) return;
@@ -234,7 +208,6 @@
         });
 
         function handleStateSwitch(estado) {
-            // Manejo de UI general
             document.getElementById('lobby-container').style.display = estado === 'lobby' ? 'flex' : 'none';
             physContainer.style.display = estado === 'lobby' ? 'block' : 'none';
             document.getElementById('game-wrapper').style.display = (estado === 'idle' || estado === 'playing' || estado === 'revealed') ? 'flex' : 'none';
@@ -246,19 +219,14 @@
             if(estado === 'lobby') {
                 startPhysics();
             } else {
-                physicsRunning = false;
-                bouncingEntities = [];
-                physContainer.innerHTML = ''; 
-                knownPlayers.clear(); // Resetea para la proxima sala
+                physicsRunning = false; bouncingEntities = []; physContainer.innerHTML = ''; knownPlayers.clear(); 
             }
 
             if (estado === 'idle') { document.getElementById('statusText').innerText = "PREPARADOS..."; lastRevealedCount = 0; }
             if (estado === 'playing') document.getElementById('statusText').innerText = "¡ADIVINA!";
             
-            // TRANSICIONES DE IMPACTO (Shake y Audio)
             if (estado === 'revealed' && lastState !== 'revealed') { 
                 triggerShake(); playSound(sfxReveal);
-                // Asegurar revelar toda la grilla si no lo hizo Firebase
                 currentBlocks.forEach(b => b.classList.add('hidden')); 
             }
             if (estado === 'ranking' && lastState !== 'ranking') { 
@@ -269,13 +237,12 @@
 
         function triggerShake() {
             document.body.classList.remove('shake');
-            void document.body.offsetWidth; // Trigger reflow
+            void document.body.offsetWidth;
             document.body.classList.add('shake');
         }
 
         let currentBlocks = [];
         function updateGrid(preg) {
-            // Reconstruir grilla solo si la imagen cambia
             if (document.getElementById('target-image').src !== preg.image || currentBlocks.length !== (preg.gridSize * preg.gridSize)) {
                 document.getElementById('target-image').src = preg.image;
                 const grid = document.getElementById('grid-overlay');
@@ -287,7 +254,6 @@
                 lastRevealedCount = 0;
             }
             
-            // Actualizar bloques ocultos y sonido
             const rev = preg.revealedBlocks || [];
             if(rev.length > lastRevealedCount && lastState === 'playing') {
                 playSound(sfxBlip);
@@ -295,7 +261,6 @@
             }
             rev.forEach(i => currentBlocks[i].classList.add('hidden'));
 
-            // Actualizar respuesta en memoria (se oculta por CSS si no es revealed)
             document.getElementById('correct-answer').innerText = preg.opciones[preg.correcta];
         }
 
