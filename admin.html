@@ -78,7 +78,7 @@
                     <button id="btnReveal" class="btn-action btn-white" disabled>REVELAR RESPUESTA</button>
                 </div>
                 <div class="btn-row">
-                    <button id="btnRanking" class="btn-action">VER RANKING</button>
+                    <button id="btnRanking" class="btn-action" disabled>VER RANKING</button>
                     <button id="btnNextRound" class="btn-action btn-primary" style="display:none;">SIGUIENTE RONDA >></button>
                 </div>
             </div>
@@ -152,6 +152,7 @@
         document.getElementById('btnNextRound').onclick = () => {
             document.getElementById('btnNextRound').style.display = 'none';
             document.getElementById('btnRanking').style.display = 'block';
+            document.getElementById('btnRanking').disabled = true; 
             if(currentIndex < playlist.length-1) { currentIndex++; syncToScreen(); }
             else { update(roomRef, { estado: 'idle' }); }
         };
@@ -161,13 +162,18 @@
             const size = parseInt(document.getElementById('gridSelect').value);
             availableBlocks = Array.from({length: size*size}, (_, i) => i); revealedBlocks = [];
             update(roomRef, { estado: 'idle', pregunta_actual: { ...playlist[currentIndex], gridSize: size, revealedBlocks: [] } });
-            document.getElementById('btnStart').disabled = false; document.getElementById('btnReveal').disabled = true; updateUI();
+            document.getElementById('btnStart').disabled = false; 
+            document.getElementById('btnReveal').disabled = true; 
+            document.getElementById('btnRanking').disabled = true;
+            updateUI();
         }
 
         document.getElementById('btnStart').onclick = () => {
             const time = parseInt(document.getElementById('timeSelect').value); const size = parseInt(document.getElementById('gridSelect').value);
             update(roomRef, { estado: 'playing', 'pregunta_actual/startTime': Date.now(), 'pregunta_actual/totalTimeSecs': time });
-            document.getElementById('btnStart').disabled = true; document.getElementById('btnReveal').disabled = false;
+            document.getElementById('btnStart').disabled = true; 
+            document.getElementById('btnReveal').disabled = false;
+            document.getElementById('btnRanking').disabled = true;
             const interval = (time * 1000) / (size*size);
             intervalId = setInterval(() => {
                 if (availableBlocks.length === 0) { clearInterval(intervalId); return; }
@@ -177,9 +183,16 @@
             }, interval);
         };
 
-        document.getElementById('btnReveal').onclick = () => { clearInterval(intervalId); update(roomRef, { estado: 'revealed' }); document.getElementById('btnReveal').disabled = true; };
+        document.getElementById('btnReveal').onclick = () => { 
+            clearInterval(intervalId); 
+            update(roomRef, { estado: 'revealed' }); 
+            document.getElementById('btnReveal').disabled = true; 
+            document.getElementById('btnRanking').disabled = false;
+        };
+        
         document.getElementById('btnRanking').onclick = () => { 
-            clearInterval(intervalId); update(roomRef, { estado: 'ranking' }); 
+            clearInterval(intervalId); 
+            update(roomRef, { estado: 'ranking' }); 
             document.getElementById('btnRanking').style.display = 'none';
             document.getElementById('btnNextRound').style.display = 'block';
         };

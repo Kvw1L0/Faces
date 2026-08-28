@@ -139,6 +139,7 @@
         let questionProcessed = false;
         
         let canAnswer = false; 
+        let localStartTime = 0; 
 
         const screens = { login: document.getElementById('login-screen'), game: document.getElementById('game-screen'), result: document.getElementById('result-screen') };
         function showScreen(name) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[name].classList.add('active'); }
@@ -189,6 +190,7 @@
                     localSelectedOption = -1; 
                     questionProcessed = false;
                     canAnswer = true; 
+                    localStartTime = 0; 
                     
                     if (preg && e === 'idle') {
                         if (document.getElementById('mini-target-image').src !== preg.image) {
@@ -225,6 +227,10 @@
                     document.getElementById('mini-game-container').style.display = 'block'; 
                     document.getElementById('options-container').style.display = 'grid';
                     
+                    if (localStartTime === 0) {
+                        localStartTime = Date.now();
+                    }
+                    
                     const revealed = preg.revealedBlocks || [];
                     revealed.forEach(idx => { if (currentBlocks[idx]) currentBlocks[idx].classList.add('hidden'); });
                 }
@@ -243,7 +249,7 @@
                         } else if (localSelectedOption === preg.correcta) {
                             scr.style.backgroundColor = "#00c853"; 
                             
-                            const timeTaken = localSelectedTimestamp - preg.startTime;
+                            const timeTaken = localSelectedTimestamp - localStartTime; 
                             const maxTime = preg.totalTimeSecs * 1000;
                             let score = Math.floor(1000 * (1 - (timeTaken / maxTime)));
                             if (score < 100) score = 100; if (timeTaken > maxTime || timeTaken < 0) score = 0;
